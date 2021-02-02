@@ -1,0 +1,46 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/qsymond/CLionProjects/webserv/headers/defines.hpp
+
+/Users/qsymond/CLionProjects/webserv/main.cpp
+cstdlib
+-
+iostream
+-
+src/Webserv.hpp
+/Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
+headers/defines.hpp
+/Users/qsymond/CLionProjects/webserv/headers/defines.hpp
+
+/Users/qsymond/CLionProjects/webserv/src/Webserv.cpp
+Webserv.hpp
+/Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
+
+/Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
+iostream
+-
+sys/types.h
+-
+sys/socket.h
+-
+netinet/in.h
+-
+arpa/inet.h
+-
+unistd.h
+-
+sstream
+-
+csignal
+-
+../headers/defines.hpp
+/Users/qsymond/CLionProjects/webserv/headers/defines.hpp
+sys/time.h
+-
+
