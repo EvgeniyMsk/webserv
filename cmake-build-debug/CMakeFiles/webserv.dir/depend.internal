@@ -10,8 +10,13 @@ CMakeFiles/webserv.dir/headers/ResponseHeaders.cpp.o
 CMakeFiles/webserv.dir/main.cpp.o
  /Users/qsymond/CLionProjects/webserv/headers/defines.hpp
  /Users/qsymond/CLionProjects/webserv/main.cpp
+ /Users/qsymond/CLionProjects/webserv/src/Config.hpp
  /Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
+CMakeFiles/webserv.dir/src/Config.cpp.o
+ /Users/qsymond/CLionProjects/webserv/src/Config.cpp
+ /Users/qsymond/CLionProjects/webserv/src/Config.hpp
 CMakeFiles/webserv.dir/src/Webserv.cpp.o
  /Users/qsymond/CLionProjects/webserv/headers/defines.hpp
+ /Users/qsymond/CLionProjects/webserv/src/Config.hpp
  /Users/qsymond/CLionProjects/webserv/src/Webserv.cpp
  /Users/qsymond/CLionProjects/webserv/src/Webserv.hpp

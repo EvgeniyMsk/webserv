@@ -7,6 +7,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "/Users/qsymond/CLionProjects/webserv/headers/RequestHeaders.cpp" "/Users/qsymond/CLionProjects/webserv/cmake-build-debug/CMakeFiles/webserv.dir/headers/RequestHeaders.cpp.o"
   "/Users/qsymond/CLionProjects/webserv/headers/ResponseHeaders.cpp" "/Users/qsymond/CLionProjects/webserv/cmake-build-debug/CMakeFiles/webserv.dir/headers/ResponseHeaders.cpp.o"
   "/Users/qsymond/CLionProjects/webserv/main.cpp" "/Users/qsymond/CLionProjects/webserv/cmake-build-debug/CMakeFiles/webserv.dir/main.cpp.o"
+  "/Users/qsymond/CLionProjects/webserv/src/Config.cpp" "/Users/qsymond/CLionProjects/webserv/cmake-build-debug/CMakeFiles/webserv.dir/src/Config.cpp.o"
   "/Users/qsymond/CLionProjects/webserv/src/Webserv.cpp" "/Users/qsymond/CLionProjects/webserv/cmake-build-debug/CMakeFiles/webserv.dir/src/Webserv.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "AppleClang")

@@ -9,38 +9,46 @@
 /Users/qsymond/CLionProjects/webserv/headers/defines.hpp
 
 /Users/qsymond/CLionProjects/webserv/main.cpp
-cstdlib
--
-iostream
--
 src/Webserv.hpp
 /Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
-headers/defines.hpp
-/Users/qsymond/CLionProjects/webserv/headers/defines.hpp
+
+/Users/qsymond/CLionProjects/webserv/src/Config.cpp
+Config.hpp
+/Users/qsymond/CLionProjects/webserv/src/Config.hpp
+
+/Users/qsymond/CLionProjects/webserv/src/Config.hpp
+string
+-
 
 /Users/qsymond/CLionProjects/webserv/src/Webserv.cpp
 Webserv.hpp
 /Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
 
 /Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
+cstdlib
+-
 iostream
 -
-sys/types.h
+unistd.h
+/Users/qsymond/CLionProjects/webserv/src/unistd.h
+fcntl.h
+/Users/qsymond/CLionProjects/webserv/src/fcntl.h
+sys/ioctl.h
 -
 sys/socket.h
+-
+sys/types.h
 -
 netinet/in.h
 -
 arpa/inet.h
 -
-unistd.h
--
 sstream
--
-csignal
 -
 ../headers/defines.hpp
 /Users/qsymond/CLionProjects/webserv/headers/defines.hpp
 sys/time.h
 -
+Config.hpp
+/Users/qsymond/CLionProjects/webserv/src/Config.hpp
 

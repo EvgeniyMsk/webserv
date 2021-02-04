@@ -9,9 +9,14 @@ CMakeFiles/webserv.dir/headers/ResponseHeaders.cpp.o: ../headers/ResponseHeaders
 
 CMakeFiles/webserv.dir/main.cpp.o: ../headers/defines.hpp
 CMakeFiles/webserv.dir/main.cpp.o: ../main.cpp
+CMakeFiles/webserv.dir/main.cpp.o: ../src/Config.hpp
 CMakeFiles/webserv.dir/main.cpp.o: ../src/Webserv.hpp
 
+CMakeFiles/webserv.dir/src/Config.cpp.o: ../src/Config.cpp
+CMakeFiles/webserv.dir/src/Config.cpp.o: ../src/Config.hpp
+
 CMakeFiles/webserv.dir/src/Webserv.cpp.o: ../headers/defines.hpp
+CMakeFiles/webserv.dir/src/Webserv.cpp.o: ../src/Config.hpp
 CMakeFiles/webserv.dir/src/Webserv.cpp.o: ../src/Webserv.cpp
 CMakeFiles/webserv.dir/src/Webserv.cpp.o: ../src/Webserv.hpp
 

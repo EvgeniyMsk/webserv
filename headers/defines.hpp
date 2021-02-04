@@ -33,7 +33,7 @@
 #define Server				"Server: "
 #define Transfer_Encoding	"Transfer-Encoding: "
 #define User_Agent			"User-Agent: "
-#define WWW_Authenticate	""
+#define WWW_Authenticate	"WWW-Authenticate: "
 
 /*
  *
