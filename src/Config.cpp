@@ -1,14 +1,13 @@
-//
-// Created by Qsymond on 04.02.2021.
-//
-
 #include "Config.hpp"
 
-Config::Config() : ipAddress("127.0.0.1"), port(8080), serverName("Webserv_21"), bufferSize(1204)
+Config::Config(const std::string &path_to_config)
 {
-}
+	int file = open(path_to_config.c_str(), O_RDONLY);
+	if (file < 0)
+		utils::exitWithLog();
+	std::cout << "Фaйл успешно открылся" << std::endl;
 
-Config::~Config()
-{
-
+	char *str;
+//	get_next_line(file, &str);
+	std::cout << str << std::endl;
 }

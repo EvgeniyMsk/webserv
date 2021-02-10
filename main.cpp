@@ -1,16 +1,10 @@
+#include "src/Server.hpp"
 #include "src/Webserv.hpp"
+#include <signal.h>
 
-
-#define SERVER_PORT  12345
-
-#define TRUE             1
-#define FALSE            0
-
-
-int main (int argc, char *argv[])
+int main(int argc, char **argv)
 {
 	Webserv webserv;
-	webserv.init();
 	webserv.run();
-	return (0);
+	return 0;
 }

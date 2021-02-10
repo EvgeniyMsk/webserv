@@ -30,7 +30,6 @@
 #define Location			"Location: "
 #define Referer				"Referer: "
 #define Retry_After			"Retry-after: "
-#define Server				"Server: "
 #define Transfer_Encoding	"Transfer-Encoding: "
 #define User_Agent			"User-Agent: "
 #define WWW_Authenticate	"WWW-Authenticate: "

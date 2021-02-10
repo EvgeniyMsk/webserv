@@ -104,6 +104,21 @@
 		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Config.hpp">
 			<Option target="webserv"/>
 		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Request.hpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Server.cpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Server.hpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Utils.cpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Utils.hpp">
+			<Option target="webserv"/>
+		</Unit>
 		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Webserv.cpp">
 			<Option target="webserv"/>
 		</Unit>

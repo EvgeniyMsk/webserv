@@ -4,44 +4,41 @@
 
 #ifndef WEBSERV_HPP
 #define WEBSERV_HPP
-#include <cstdlib>
-#include <iostream>
-#include "unistd.h"
-#include "fcntl.h"
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sstream>
-#include "../headers/defines.hpp"
-#include <sys/time.h>
-#include "Config.hpp"
 
-#define TRUE             1
-#define FALSE            0
+#include "Config.hpp"
+# include "Server.hpp"
+
+# define CONFIG_FILE_DEFAULT_PATH "/web.conf"
+
 class Webserv
 {
 private:
-	Config	serverConfig;
-	int			end_server;
-	int    listen_sd;
-	struct sockaddr_in addr;
-	struct timeval      timeout;
-	fd_set              master_set, working_set;
-	int    	max_sd, new_sd;
-	int 	rc;
+	std::vector<Server *> servers;
+	fd_set read_set;
+	fd_set write_set;
+	int maxFd;
+	Config serverConfig;
+	bool isServerRunning;
 public:
-	Webserv(Config *config);
+	Webserv();
 
-	virtual ~Webserv();
+	Webserv(const std::string &config_file_path);
 
-	void init();
+	void addServer(Server *server);
+
+	int getServerSize() const;
+
+	Server *getServer(int i);
+
+	void setToReadFDSet(std::list<int> &clientsFD);
+
+	void updateMaxFD();
+
+	const int &getMaxFD() const;
 
 	void run();
 
-	std::string getCurrentTime() const;
+	static void stop(int n);
 };
-
 
 #endif

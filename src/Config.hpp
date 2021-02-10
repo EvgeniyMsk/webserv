@@ -1,23 +1,13 @@
-//
-// Created by Qsymond on 04.02.2021.
-//
+#ifndef CONF_HPP
+#define CONF_HPP
 
-#ifndef WEBSERV_CONFIG_HPP
-#define WEBSERV_CONFIG_HPP
+# include "Utils.hpp"
 
-#include <string>
 class Config
 {
-	typedef std::string string;
-	public:
-	string	ipAddress;
-	int		port;
-	string 	serverName;
-	size_t 	bufferSize;
-	public:
-	Config();
-	virtual ~Config();
+public:
+	Config() {}
+	Config(const std::string &path_to_config);
 };
 
-
-#endif //WEBSERV_CONFIG_HPP
+#endif
