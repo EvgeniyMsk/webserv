@@ -9,17 +9,26 @@ CMakeFiles/webserv.dir/headers/ResponseHeaders.cpp.o
  /Users/qsymond/CLionProjects/webserv/headers/ResponseHeaders.hpp
 CMakeFiles/webserv.dir/main.cpp.o
  /Users/qsymond/CLionProjects/webserv/main.cpp
+ /Users/qsymond/CLionProjects/webserv/src/Client.hpp
  /Users/qsymond/CLionProjects/webserv/src/Config.hpp
  /Users/qsymond/CLionProjects/webserv/src/Request.hpp
  /Users/qsymond/CLionProjects/webserv/src/Server.hpp
  /Users/qsymond/CLionProjects/webserv/src/Utils.hpp
  /Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
+CMakeFiles/webserv.dir/src/Client.cpp.o
+ /Users/qsymond/CLionProjects/webserv/src/Client.cpp
+ /Users/qsymond/CLionProjects/webserv/src/Client.hpp
+ /Users/qsymond/CLionProjects/webserv/src/Utils.hpp
 CMakeFiles/webserv.dir/src/Config.cpp.o
  /Users/qsymond/CLionProjects/webserv/src/Config.cpp
  /Users/qsymond/CLionProjects/webserv/src/Config.hpp
  /Users/qsymond/CLionProjects/webserv/src/Utils.hpp
+CMakeFiles/webserv.dir/src/RequestHeader.cpp.o
+ /Users/qsymond/CLionProjects/webserv/src/RequestHeader.cpp
+ /Users/qsymond/CLionProjects/webserv/src/RequestHeader.hpp
+ /Users/qsymond/CLionProjects/webserv/src/Utils.hpp
 CMakeFiles/webserv.dir/src/Server.cpp.o
- /Users/qsymond/CLionProjects/webserv/src/Config.hpp
+ /Users/qsymond/CLionProjects/webserv/src/Client.hpp
  /Users/qsymond/CLionProjects/webserv/src/Request.hpp
  /Users/qsymond/CLionProjects/webserv/src/Server.cpp
  /Users/qsymond/CLionProjects/webserv/src/Server.hpp
@@ -28,6 +37,7 @@ CMakeFiles/webserv.dir/src/Utils.cpp.o
  /Users/qsymond/CLionProjects/webserv/src/Utils.cpp
  /Users/qsymond/CLionProjects/webserv/src/Utils.hpp
 CMakeFiles/webserv.dir/src/Webserv.cpp.o
+ /Users/qsymond/CLionProjects/webserv/src/Client.hpp
  /Users/qsymond/CLionProjects/webserv/src/Config.hpp
  /Users/qsymond/CLionProjects/webserv/src/Request.hpp
  /Users/qsymond/CLionProjects/webserv/src/Server.hpp

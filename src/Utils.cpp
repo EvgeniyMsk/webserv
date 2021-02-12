@@ -1,6 +1,6 @@
 #include "Utils.hpp"
 
-void utils::exitWithLog(void)
+void utils::exitWithLog()
 {
 	std::cout << std::strerror(errno) << std::endl;
 	exit(errno);

@@ -6,6 +6,14 @@
 
 #IncludeRegexTransform: 
 
+/Users/qsymond/CLionProjects/webserv/main.cpp
+src/Webserv.hpp
+/Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
+
+/Users/qsymond/CLionProjects/webserv/src/Client.hpp
+Utils.hpp
+/Users/qsymond/CLionProjects/webserv/src/Utils.hpp
+
 /Users/qsymond/CLionProjects/webserv/src/Config.hpp
 Utils.hpp
 /Users/qsymond/CLionProjects/webserv/src/Utils.hpp
@@ -21,12 +29,10 @@ Server.hpp
 /Users/qsymond/CLionProjects/webserv/src/Server.hpp
 Utils.hpp
 /Users/qsymond/CLionProjects/webserv/src/Utils.hpp
+Client.hpp
+/Users/qsymond/CLionProjects/webserv/src/Client.hpp
 Request.hpp
 /Users/qsymond/CLionProjects/webserv/src/Request.hpp
-Config.hpp
-/Users/qsymond/CLionProjects/webserv/src/Config.hpp
-arpa/inet.h
--
 
 /Users/qsymond/CLionProjects/webserv/src/Utils.hpp
 iostream
@@ -45,16 +51,20 @@ sys/types.h
 -
 sys/stat.h
 -
+arpa/inet.h
+-
+sys/socket.h
+-
 fcntl.h
 -
 sstream
--
-sys/socket.h
 -
 netinet/in.h
 -
 unistd.h
 -
+stdlib.h
+/Users/qsymond/CLionProjects/webserv/src/stdlib.h
 list
 -
 map
@@ -63,4 +73,18 @@ algorithm
 -
 signal.h
 /Users/qsymond/CLionProjects/webserv/src/signal.h
+fstream
+-
+
+/Users/qsymond/CLionProjects/webserv/src/Webserv.cpp
+Webserv.hpp
+/Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
+
+/Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
+Utils.hpp
+/Users/qsymond/CLionProjects/webserv/src/Utils.hpp
+Config.hpp
+/Users/qsymond/CLionProjects/webserv/src/Config.hpp
+Server.hpp
+/Users/qsymond/CLionProjects/webserv/src/Server.hpp
 

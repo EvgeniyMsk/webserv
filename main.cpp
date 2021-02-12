@@ -1,8 +1,6 @@
-#include "src/Server.hpp"
 #include "src/Webserv.hpp"
-#include <signal.h>
 
-int main(int argc, char **argv)
+int main()
 {
 	Webserv webserv;
 	webserv.run();

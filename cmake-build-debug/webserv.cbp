@@ -98,6 +98,12 @@
 		<Unit filename="/Users/qsymond/CLionProjects/webserv/main.cpp">
 			<Option target="webserv"/>
 		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Client.cpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Client.hpp">
+			<Option target="webserv"/>
+		</Unit>
 		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Config.cpp">
 			<Option target="webserv"/>
 		</Unit>
@@ -105,6 +111,12 @@
 			<Option target="webserv"/>
 		</Unit>
 		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Request.hpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/RequestHeader.cpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/RequestHeader.hpp">
 			<Option target="webserv"/>
 		</Unit>
 		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Server.cpp">

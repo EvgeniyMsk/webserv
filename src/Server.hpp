@@ -5,11 +5,10 @@
 #ifndef WEBSERV_SERVER_HPP
 #define WEBSERV_SERVER_HPP
 # include "Utils.hpp"
-# include "Request.hpp"
-# include "Config.hpp"
+#include "Client.hpp"
+#include "Request.hpp"
+class Client;
 
-
-#include <arpa/inet.h>
 class Server
 {
 private:
@@ -17,8 +16,7 @@ private:
 	struct sockaddr_in 			serverAddress;
 	int 						port;
 	std::string 				serverName;
-	std::list<int> 				clientSockets;
-	std::map<int, Request *>	clientRequest;
+	std::vector<Client *> 		clients;
 	int 						maxFd;
 	size_t 						BUFFER_SIZE;
 public:
@@ -37,9 +35,13 @@ public:
 
 	void acceptConnection();
 
-	void readRequest(fd_set *globalReadSetPtr);
+	void readRequest(fd_set read_set);
 
-	std::list<int> &getReadClients();
+	void writeResponse(fd_set write_set);
+
+	std::vector<Client *> getReadClients();
+
+	void handleData(Client *client, std::string const &data);
 
 	void setNonBlock(int fd);
 

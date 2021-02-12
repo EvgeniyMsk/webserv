@@ -39,10 +39,16 @@ int Webserv::getServerSize() const
 	return (servers.size());
 }
 
-void Webserv::setToReadFDSet(std::list<int>& clientsFD)
+void Webserv::update_ft_sets()
 {
-	for(std::list<int>::iterator it = clientsFD.begin(); it != clientsFD.end(); it++)
-		FD_SET(*it, &read_set);
+	for(std::vector<Server *>::iterator servs = servers.begin(); servs != servers.end(); servs++)
+	{
+		FD_SET((*servs)->getServerSocket(), &read_set);
+		for (std::vector<Client *>::iterator clients = (*servs)->getReadClients().begin(); clients != (*servs)->getReadClients().end(); clients++)
+			FD_SET((*clients)->getClientSocket(), &read_set);
+		(*servs)->updateMaxFd();
+	}
+
 }
 
 void Webserv::updateMaxFD()
@@ -72,36 +78,25 @@ void Webserv::run()
 	signal(SIGTERM, &Webserv::stop);
 	signal(SIGINT, &Webserv::stop);
 	std::cout << "Webserv started" << std::endl;
-//	for (std::vector<Server *>::iterator it = servers.begin(); it != servers.end(); it++)
-//		std::cout << (*it)->getServerName() << " " << inet_ntoa((*it)->getServerAddress().sin_addr) << ":" << (*it)->getPort() << " has started!\n";
+	for (std::vector<Server *>::iterator it = servers.begin(); it != servers.end(); it++)
+		std::cout << (*it)->getServerName() << " " << inet_ntoa((*it)->getServerAddress().sin_addr) << ":" << (*it)->getPort() << " has started!\n";
 
 	while (isServerRunning)
 	{
-		//	Reset FS_SETS
+		maxFd = 0;
 		FD_ZERO(&read_set);
 		FD_ZERO(&write_set);
-
-
-		for (int i = 0; i < getServerSize(); i++)
-		{
-			Server *server = getServer(i);
-			FD_SET(server->getServerSocket(), &read_set);
-			setToReadFDSet(server->getReadClients());
-			server->updateMaxFd();
-		}
+		update_ft_sets();
 		updateMaxFD();
-
-		//	Listen sockets
 		if (select(getMaxFD() + 1, &read_set, &write_set, nullptr, nullptr) < 0)
 			utils::exitWithLog();
-
-		// Новый запрос на соединение, accept
 		for (int i = 0; i < getServerSize(); i++)
 		{
 			Server *server = getServer(i);
 			if (FD_ISSET(server->getServerSocket(), &read_set))
 				server->acceptConnection();
-			server->readRequest(&read_set);
+			server->readRequest(read_set);
+			server->writeResponse(write_set);
 		}
 	}
 }
@@ -112,3 +107,5 @@ void Webserv::stop(int n)
 	std::cout << "Server stopped..." << std::endl;
 	return;
 }
+
+

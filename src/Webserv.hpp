@@ -4,9 +4,9 @@
 
 #ifndef WEBSERV_HPP
 #define WEBSERV_HPP
-
+#include "Utils.hpp"
 #include "Config.hpp"
-# include "Server.hpp"
+#include "Server.hpp"
 
 # define CONFIG_FILE_DEFAULT_PATH "/web.conf"
 
@@ -30,7 +30,7 @@ public:
 
 	Server *getServer(int i);
 
-	void setToReadFDSet(std::list<int> &clientsFD);
+	void update_ft_sets();
 
 	void updateMaxFD();
 

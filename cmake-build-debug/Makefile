@@ -224,6 +224,33 @@ main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/main.cpp.s
 .PHONY : main.cpp.s
 
+src/Client.o: src/Client.cpp.o
+
+.PHONY : src/Client.o
+
+# target to build an object file
+src/Client.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/src/Client.cpp.o
+.PHONY : src/Client.cpp.o
+
+src/Client.i: src/Client.cpp.i
+
+.PHONY : src/Client.i
+
+# target to preprocess a source file
+src/Client.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/src/Client.cpp.i
+.PHONY : src/Client.cpp.i
+
+src/Client.s: src/Client.cpp.s
+
+.PHONY : src/Client.s
+
+# target to generate assembly for a file
+src/Client.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/src/Client.cpp.s
+.PHONY : src/Client.cpp.s
+
 src/Config.o: src/Config.cpp.o
 
 .PHONY : src/Config.o
@@ -250,6 +277,33 @@ src/Config.s: src/Config.cpp.s
 src/Config.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/src/Config.cpp.s
 .PHONY : src/Config.cpp.s
+
+src/RequestHeader.o: src/RequestHeader.cpp.o
+
+.PHONY : src/RequestHeader.o
+
+# target to build an object file
+src/RequestHeader.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/src/RequestHeader.cpp.o
+.PHONY : src/RequestHeader.cpp.o
+
+src/RequestHeader.i: src/RequestHeader.cpp.i
+
+.PHONY : src/RequestHeader.i
+
+# target to preprocess a source file
+src/RequestHeader.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/src/RequestHeader.cpp.i
+.PHONY : src/RequestHeader.cpp.i
+
+src/RequestHeader.s: src/RequestHeader.cpp.s
+
+.PHONY : src/RequestHeader.s
+
+# target to generate assembly for a file
+src/RequestHeader.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/src/RequestHeader.cpp.s
+.PHONY : src/RequestHeader.cpp.s
 
 src/Server.o: src/Server.cpp.o
 
@@ -350,9 +404,15 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... src/Client.o"
+	@echo "... src/Client.i"
+	@echo "... src/Client.s"
 	@echo "... src/Config.o"
 	@echo "... src/Config.i"
 	@echo "... src/Config.s"
+	@echo "... src/RequestHeader.o"
+	@echo "... src/RequestHeader.i"
+	@echo "... src/RequestHeader.s"
 	@echo "... src/Server.o"
 	@echo "... src/Server.i"
 	@echo "... src/Server.s"
