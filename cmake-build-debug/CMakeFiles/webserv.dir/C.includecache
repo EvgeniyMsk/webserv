@@ -6,3 +6,7 @@
 
 #IncludeRegexTransform: 
 
+/Users/qsymond/CLionProjects/webserv/cgi-bin/tester.c
+stdio.h
+-
+

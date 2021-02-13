@@ -132,15 +132,50 @@ void Server::writeResponse(fd_set write_set)
 
 void Server::handleData(Client *client, const std::string &data)
 {
-	std::stringstream response;
-	std::stringstream response_body;
-	response_body << "<title>Test C++ HTTP Server</title>\n" << "<h1>Test page for " << serverName << "</h1>\n";
-	// Формируем весь ответ вместе с заголовками
-	response 	<< "HTTP/1.1 200 OK\r\n"
+	int fd[2];
+	int child;
+	int status;
+
+	if (status = pipe(fd) < 0)
+		std::cout << "pipe()" << std::endl;
+	child = fork();
+	if (child < 0)
+		std::cout << "fork()" << std::endl;
+	else if (child == 0)
+	{
+		// Процесс - потомок
+		close(fd[0]);
+		dup2(fd[1], 1);
+		execve("../cgi-bin/main", nullptr,nullptr);
+		close(fd[1]);
+		printf("Child exit\n");
+	}
+	else
+	{
+		// Процесс - родитель
+		close(fd[1]);
+		char resstring[200];
+		read(fd[0], resstring, 200);
+		close(fd[0]);
+		std::stringstream response;
+		std::stringstream response_body;
+		response_body << resstring;
+		// Формируем весь ответ вместе с заголовками
+		response 	<< "HTTP/1.1 200 OK\r\n"
 				<< "Version: HTTP/1.1\r\n"
 				<< "Content-Type: text/html; charset=utf-8\r\n"
 				<< "Content-Length: " << response_body.str().length()
 				<< "\r\n\r\n"
 				<< response_body.str();
-	int result = send(client->getClientSocket(), response.str().c_str(), response.str().length(), 0);
+		int result = send(client->getClientSocket(), response.str().c_str(), response.str().length(), 0);
+		waitpid(child, &status, 0);
+		if (WIFEXITED(status))
+		{
+			int exit_code = WEXITSTATUS(status);
+			if (exit_code == 2)
+				utils::exitWithLog();
+		}
+		if (result < 0)
+			utils::exitWithLog();
+	}
 }

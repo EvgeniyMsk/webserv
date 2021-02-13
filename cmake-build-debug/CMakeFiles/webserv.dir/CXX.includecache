@@ -6,15 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/Users/qsymond/CLionProjects/webserv/main.cpp
-src/Webserv.hpp
-/Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
-
 /Users/qsymond/CLionProjects/webserv/src/Client.hpp
-Utils.hpp
-/Users/qsymond/CLionProjects/webserv/src/Utils.hpp
-
-/Users/qsymond/CLionProjects/webserv/src/Config.hpp
 Utils.hpp
 /Users/qsymond/CLionProjects/webserv/src/Utils.hpp
 
@@ -75,16 +67,4 @@ signal.h
 /Users/qsymond/CLionProjects/webserv/src/signal.h
 fstream
 -
-
-/Users/qsymond/CLionProjects/webserv/src/Webserv.cpp
-Webserv.hpp
-/Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
-
-/Users/qsymond/CLionProjects/webserv/src/Webserv.hpp
-Utils.hpp
-/Users/qsymond/CLionProjects/webserv/src/Utils.hpp
-Config.hpp
-/Users/qsymond/CLionProjects/webserv/src/Config.hpp
-Server.hpp
-/Users/qsymond/CLionProjects/webserv/src/Server.hpp
 
