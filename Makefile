@@ -4,7 +4,7 @@ FLAGS = -Wall -Wextra -Werror -g -std=c++98
 
 SRCS = main.cpp Server.cpp Utils.cpp\
  	get_next_line/get_next_line.cpp get_next_line/get_next_line_utils.cpp \
- 	Web.cpp Conf.cpp
+ 	Web.cpp Conf.cpp CGI.cpp Position.cpp
 
 
 OBJS = $(SRCS:.cpp=.o)

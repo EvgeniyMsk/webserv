@@ -21,8 +21,8 @@ private:
     std::list<int> readClient;
     std::map<int, Request *> clientRequest;
     int maxFd;
-    Server() {};
 public:
+    Server() {};
     Server(int newPort);
     ~Server() {};
     const int & getList() const;

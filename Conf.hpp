@@ -1,5 +1,5 @@
 #ifndef CONF_HPP
-#define CONF_HPP
+# define CONF_HPP
 
 # include <string>
 # include <sys/types.h>
@@ -9,9 +9,14 @@
 
 class Config
 {
+private:
+    std::string server_name;
+	int port;
 public:
     Config() {}
     Config(const std::string &path_to_config);
+    const std::string &getServerName() const;
+    int getPort() const;
 };
 
 #endif

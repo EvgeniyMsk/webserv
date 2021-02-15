@@ -12,3 +12,13 @@ Config::Config(const std::string &path_to_config)
     get_next_line(file, &str);
     std::cout << str << std::endl;
 }
+
+const std::string &Config::getServerName() const
+{
+    return (server_name);
+}
+
+int Config::getPort() const
+{
+    return (port);
+}
