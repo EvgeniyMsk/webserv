@@ -35,12 +35,28 @@ void Server::acceptConnection()
 	readClient.push_back(sock);
 }
 
+int get_time(void)
+{
+    struct timeval	current;
+
+    gettimeofday(&current, NULL);
+    return ((int)(((current.tv_sec) * 1000) + ((current.tv_usec) / 1000)));
+}
+
+void set_time(std::map<int, int> &time, std::list<int>::iterator it, std::list<int>::iterator const& ite) {
+    while (it != ite) {
+        time[*it] = get_time();
+        ++it;
+    }
+}
+
 void Server::handleRequests(fd_set* globalReadSetPtr)
 {
 	char buf[1024];
 	int bytes_read;
 	std::list<int>::iterator it = readClient.begin();
-
+	std::map<int, int> time;
+    set_time(time, it, readClient.end());
 	while (it != readClient.end())
 	{
 		if (FD_ISSET(*it, globalReadSetPtr))
@@ -48,14 +64,18 @@ void Server::handleRequests(fd_set* globalReadSetPtr)
 			// Поступили данные от клиента, читаем их
 			bytes_read = recv(*it, buf, 1024, 0);
 
-			if (bytes_read <= 0)
+			if (bytes_read == 0)
 			{
 				// Соединение разорвано, удаляем сокет из множества
-				close(*it);
-				it = readClient.erase(it);
+				readError(it);
 				continue;
 			}
 
+			else if (bytes_read < 0)
+                bytes_read = 0;
+            else
+                time[*it] = get_time();
+            buf[bytes_read] = '\0';
 			// Мы знаем фактический размер полученных данных, поэтому ставим метку конца строки в буфере запроса
 			buf[bytes_read] = '\0';
 
@@ -73,9 +93,34 @@ const int &Server::getMaxFd() const
 	return (maxFd);
 }
 
-void Server::processConnections(fd_set* globalReadSetPtr)
+void Server::handleResponses(fd_set* globalWriteSetPtr)
+{
+	std::list<int>::iterator it = writeClient.begin();
+	int fd;
+	while (it != writeClient.end())
+	{
+		fd = *it;
+		if (FD_ISSET(fd, globalWriteSetPtr))
+		{
+			Request* request = clientRequest[fd];
+			//ты начал парсить, нужно сюда видимо вставить будет
+
+			Response response(request, fd);
+			response.generateResponse();
+			response.sendResponse();
+
+			close(fd);
+			clientRequest.erase(fd);
+			it = writeClient.erase(it);
+		} else
+			++it;
+	}
+}
+
+void Server::processConnections(fd_set* globalReadSetPtr, fd_set* globalWriteSetPtr)
 {
 	handleRequests(globalReadSetPtr);
+	handleResponses(globalWriteSetPtr);
 }
 
 void Server::updateMaxFd()
@@ -83,10 +128,19 @@ void Server::updateMaxFd()
     int maxTmp = list;
     if (!readClient.empty())
         maxTmp = std::max(maxTmp, *std::max_element(readClient.begin(), readClient.end()));
+	 if (!writeClient.empty())
+    	maxTmp = std::max(maxTmp, *std::max_element(writeClient.begin(), writeClient.end()));
     maxFd = maxTmp;
 }
 
 std::list<int> &Server::getReadClients()
 {
 	return (readClient);
+}
+
+void        Server::readError(std::list<int>::iterator & it)
+{
+    close(*it);
+    delete clientRequest[*it];
+    it = writeClient.erase(it);
 }
