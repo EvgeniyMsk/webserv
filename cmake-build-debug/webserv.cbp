@@ -80,61 +80,46 @@
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/headers/RequestHeaders.cpp">
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Config/Config.cpp">
 			<Option target="webserv"/>
 		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/headers/RequestHeaders.hpp">
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Config/Config.hpp">
 			<Option target="webserv"/>
 		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/headers/ResponseHeaders.cpp">
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Request/Request.cpp">
 			<Option target="webserv"/>
 		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/headers/ResponseHeaders.hpp">
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Request/Request.hpp">
 			<Option target="webserv"/>
 		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/headers/defines.hpp">
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Utils/Utils.cpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Utils/Utils.hpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Webserv/Client.cpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Webserv/Client.hpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Webserv/Webserv.cpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Webserv/Webserv.hpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Webserv/initialize.cpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/Webserv/utils.cpp">
+			<Option target="webserv"/>
+		</Unit>
+		<Unit filename="/Users/qsymond/CLionProjects/webserv/cgi-bin/tester.cpp">
 			<Option target="webserv"/>
 		</Unit>
 		<Unit filename="/Users/qsymond/CLionProjects/webserv/main.cpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Client.cpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Client.hpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Config.cpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Config.hpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Request.hpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/RequestHeader.cpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/RequestHeader.hpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Server.cpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Server.hpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Utils.cpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Utils.hpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Webserv.cpp">
-			<Option target="webserv"/>
-		</Unit>
-		<Unit filename="/Users/qsymond/CLionProjects/webserv/src/Webserv.hpp">
 			<Option target="webserv"/>
 		</Unit>
 		<Unit filename="/Users/qsymond/CLionProjects/webserv/CMakeLists.txt">
