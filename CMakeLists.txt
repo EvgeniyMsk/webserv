@@ -3,4 +3,4 @@ project(webserv)
 
 set(CMAKE_CXX_STANDARD 98)
 
-add_executable(webserv main.cpp headers/RequestHeaders.cpp headers/RequestHeaders.hpp headers/ResponseHeaders.cpp headers/ResponseHeaders.hpp headers/defines.hpp src/Webserv.cpp src/Webserv.hpp src/Config.cpp src/Config.hpp src/Server.cpp src/Server.hpp src/Utils.hpp src/Utils.cpp src/Request.hpp src/Client.cpp src/Client.hpp src/RequestHeader.cpp src/RequestHeader.hpp)
+add_executable(webserv main.cpp Webserv/Webserv.cpp Webserv/Webserv.hpp Config/Config.cpp Config/Config.hpp Utils/Utils.cpp Utils/Utils.hpp Webserv/Client.cpp Webserv/Client.hpp Request/Request.cpp Request/Request.hpp cgi-bin/tester.cpp Webserv/initialize.cpp Webserv/utils.cpp)
