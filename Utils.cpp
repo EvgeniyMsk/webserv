@@ -5,8 +5,8 @@ void utils::exitWithLog(void)
     std::cout << std::strerror(errno) << std::endl;
     exit(errno);
 }
-
-size_t ft_strlen(char const *s)
+ 
+size_t ft_len(char const *s)
 {
 	char const *str = s;
 
@@ -17,7 +17,7 @@ size_t ft_strlen(char const *s)
 
 char *ft_strdup(char const *s)
 {
-	char *res = (char *)malloc(ft_strlen(s) + 1);
+	char *res = (char *)malloc(ft_len(s) + 1);
 	int i = 0;
 
 	if (res)

@@ -87,7 +87,7 @@ void Web::serveConnections()
 			Server *server = getServerByPosition(i);
 			if (FD_ISSET(server->getList(), getReadSetPtr())) // новый запрос на соединение, accept
 				server->acceptConnection();
-			server->processConnections(getReadSetPtr());
+			server->processConnections(getReadSetPtr(), getWriteSetPtr());
 		}
 	}
 }

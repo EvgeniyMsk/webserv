@@ -30,7 +30,7 @@ struct input
     std::map<std::string, std::string> *requestMap;
 };
 
-size_t ft_strlen(char const *s);
+size_t ft_len(char const *s);
 char *ft_strdup(char const *s);
 std::string trimAfter(std::string const &str, char const &c);
 std::pair<std::string, std::string> splitPair(std::string const &str, char const &c);
