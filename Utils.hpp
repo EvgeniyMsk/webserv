@@ -20,7 +20,7 @@
 
 namespace utils
 {
-    void exitWithLog(void);
+    void exitWithLog();
 }
 
 struct input
