@@ -1,6 +1,6 @@
 NAME = webserv
 CFLAGS = -std=c++98
-FILES = main Webserv
+FILES = *
 SRCS = $(addprefix srcs/, $(addsuffix .cpp, $(FILES)))
 OBJS = $(SRCS:.cpp=.o)
 CXX = clang++
