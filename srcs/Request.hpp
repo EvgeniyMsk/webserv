@@ -6,7 +6,9 @@
 #include "Utils.hpp"
 
 class Server;
+
 class Config;
+
 struct request_s
 {
 	int status_code;
@@ -16,11 +18,10 @@ struct request_s
 	std::pair<int, int> version;
 	std::map<header_w, std::string> headers;
 	Server *server;
-	Config *config;
+	Config *location;
 	std::string body;
-	bool transfer_buffer;
+	bool tempBuffer;
 	bool cgi_ran;
-
 	std::map<std::string, std::string> env;
 
 	request_s();
@@ -36,24 +37,24 @@ struct request_s
 	void clear();
 };
 
-std::ostream&	operator<<(std::ostream& o, const request_s& r);
+std::ostream &operator<<(std::ostream &o, const request_s &r);
 
 class Request
 {
-	int statusCode;
-	method_w method;
-	std::string uri;
-	std::pair<int, int> version;
-	std::map<header_w, std::string> headers;
-	std::map<std::string, method_w> methodMap;
-	std::map<std::string, header_w> headerMap;
-	std::string rawRequest;
-	std::map<std::string, std::string> env;
+	int _status_code;
+	method_w _method;
+	std::string _uri;
+	std::pair<int, int> _version;
+	std::map<header_w, std::string> _headers;
+	std::map<std::string, method_w> _methodMap;
+	std::map<std::string, header_w> _headerMap;
+	std::string _rawRequest;
+	std::map<std::string, std::string> _env;
 
 public:
-	friend class ResponseHandler;
+	friend class Response;
 
-	friend class Connection;
+	friend class Webserv;
 
 	Request();
 

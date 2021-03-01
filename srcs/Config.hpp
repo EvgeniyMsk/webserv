@@ -1,40 +1,27 @@
-#ifndef CONFIG_HPP
-#define CONFIG_HPP
-#include "Utils.hpp"
-#include <string>
-#include <vector>
-#include <map>
-#include <sys/stat.h>
+#ifndef LOCATION_HPP
+# define LOCATION_HPP
+
+# include <string>
+# include <map>
+# include <vector>
+# include "Utils.hpp"
 
 class Config
 {
-private:
-	std::string root;
-	std::string autoindex;
-	std::string location_match;
-	std::string error_page;
-	std::string auth_basic_realm;
-	std::string htpasswd_path;
-	std::vector<std::string> indexes;
-	std::vector<std::string> cgi_allowed_extensions;
-	std::vector<method_w> allow_method;
-	long unsigned int maxBody;
-	std::string default_cgi_path;
-	std::string php_cgi;
-	std::map<std::string, std::string> loginfo;
 public:
 	friend class Server;
 
 	Config();
 
-	explicit Config(std::string &);
+	explicit Config(std::string &config);
 
-	virtual ~Config();
+	~Config();
 
-	Config(const Config &config);
+	Config(const Config &);
 
 	Config &operator=(const Config &config);
 
+private:
 	void setRoot(const std::string &);
 
 	void setAutoIndex(const std::string &);
@@ -53,17 +40,19 @@ public:
 
 	void setPhpCgiPath(const std::string &);
 
-	void setAuthBasicRealm(const std::string &);
+	void setauth_basic(const std::string &);
 
 	void setHtPasswdPath(const std::string &);
 
+
+public:
 	std::string getRoot() const;
 
 	std::string getAutoIndex() const;
 
-	std::string getLocationMatch() const;
+	std::string getlocationmatch() const;
 
-	std::string getAllowedMethods() const;
+	std::string getMethods() const;
 
 	std::string getIndex() const;
 
@@ -85,13 +74,28 @@ public:
 
 	void setup(int);
 
-	bool checkIfMethodAllowed(const method_w &meth) const;
+	bool isMethodAllowed(const method_w &meth) const;
 
-	bool getmatch(const std::string &username, const std::string &passwd);
+	bool getMatch(const std::string &username, const std::string &passwd);
 
 	bool isExtensionAllowed(const std::string &uri) const;
+
+private:
+	std::string root;
+	std::string autoIndex;
+	std::string locationMatch;
+	std::string errorPage;
+	std::string auth_basic_realm;
+	std::string htPasswdPath;
+	std::vector<std::string> indexes;
+	std::vector<std::string> cgiAllowedExtensions;
+	std::vector<method_w> allowedMethod;
+	long unsigned int maxBody;
+	std::string cgi_path;
+	std::string php_cgi;
+	std::map<std::string, std::string> loginfo;
 };
 
-std::ostream&	operator<<(std::ostream &os, const Config &config);
+std::ostream &operator<<(std::ostream &o, const Config &x);
 
 #endif

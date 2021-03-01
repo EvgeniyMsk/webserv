@@ -218,7 +218,7 @@ namespace ft
 	int get_next_line(int fd, std::string &line)
 	{
 		int ret = 1;
-		static std::map<int, std::string> m; // m[fd] is my buffer string
+		static std::map<int, std::string> m;
 
 		line.clear();
 		while (ret > 0)
@@ -279,6 +279,34 @@ namespace ft
 		return (sign * result);
 	}
 
+	long	atol(const char *str)
+	{
+		int		sign;
+		long	result;
+
+		result = 0;
+		sign = 1;
+		while (iswhitespace(*str))
+			str++;
+		if (*str == '-')
+		{
+			sign = -1;
+			str++;
+		}
+		else if (*str == '+')
+			str++;
+		while (*str >= '0' && *str <= '9')
+		{
+			result = (10 * result) + (*str - '0');
+			str++;
+		}
+		if (result > LONG_MAX && sign == -1)
+			return (0);
+		else if (result >= LONG_MAX)
+			return (-1);
+		return (sign * result);
+	}
+
 	int		is_first_char(std::string str, char find)
 	{
 		int i = 0;
@@ -296,5 +324,95 @@ namespace ft
 		size_t vbegin = str.find_first_not_of(delim, kend);
 		size_t vend = str.find_first_of(end, vbegin);
 		value = str.substr(vbegin, vend - vbegin);
+	}
+
+	std::string inttostring(int n) {
+		std::string ss;
+
+		if (n == 0)
+			ss = "0";
+		while (n) {
+			char i = '0' + (n % 10);
+			n /= 10;
+			ss = i + ss;
+		}
+		return ss;
+	}
+	void	stringtoupper(std::string& str) {
+		for (size_t i = 0; i < str.length(); ++i) {
+			str[i] = toupper(str[i]);
+		}
+	}
+
+	void	trimstring(std::string& str, const char* totrim) {
+		size_t	begin = str.find_first_not_of(totrim),
+				end = str.find_last_not_of(totrim);
+		if (begin == std::string::npos || end == 0)
+			return;
+		str = str.substr(begin, end - begin + 1);
+	}
+
+	int findNthOccur(std::string str, char ch, int N)
+	{
+		int occur = 0;
+
+		for (int i = (str.length()); i >= 0; i--) {
+			if (str[i] == ch) {
+				occur += 1;
+			}
+			if (occur == N)
+				return i;
+		}
+		return -1;
+	}
+
+	time_t	getTime() {
+		struct timeval tv = {};
+		struct timezone tz = {};
+
+		gettimeofday(&tv, &tz);
+		return (tv.tv_usec);
+	}
+
+	void	bzero(void *s, size_t n)
+	{
+		size_t			i;
+		unsigned char	*ptr;
+
+		ptr = (unsigned char *)s;
+		i = 0;
+		while (i < n)
+		{
+			ptr[i] = 0;
+			i++;
+		}
+	}
+
+	void	*calloc(size_t count, size_t size)
+	{
+		void *ptr;
+
+		if (count == 0 || size == 0)
+		{
+			count = 1;
+			size = 1;
+		}
+		ptr = malloc(count * size);
+		if (ptr)
+			bzero(ptr, count * size);
+		return (ptr);
+	}
+
+	char	*strdup(const char *s1)
+	{
+		char	*dup;
+		size_t	i;
+
+		i = strlen(s1) + 1;
+		dup = (char*)malloc(i);
+		if (dup == NULL)
+			return (NULL);
+		memcpy(dup, s1, i);
+		return (dup);
 	}
 }

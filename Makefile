@@ -1,6 +1,6 @@
 NAME = webserv
 CFLAGS = -std=c++98
-FILES = Utils Request Config main
+FILES = main Webserv Utils Server Client Request Response Config Cgi
 SRCS = $(addprefix srcs/, $(addsuffix .cpp, $(FILES)))
 OBJS = $(SRCS:.cpp=.o)
 CXX = clang++

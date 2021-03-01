@@ -1,14 +1,16 @@
 #include "Config.hpp"
+#include <sys/stat.h>
+#include <climits>
 
-Config::Config() : maxBody(0), default_cgi_path()
+Config::Config() : maxBody(0), cgi_path()
 {
-	this->location_match = "";
+	this->locationMatch = "";
 }
 
-Config::Config(std::string& location_match) : maxBody(0), default_cgi_path()
+Config::Config(std::string &location_match) : maxBody(0), cgi_path()
 {
-	this->location_match = location_match;
-	this->autoindex = "off";
+	this->locationMatch = location_match;
+	this->autoIndex = "off";
 }
 
 Config::~Config()
@@ -16,100 +18,114 @@ Config::~Config()
 	loginfo.clear();
 }
 
-Config::Config(const Config& config) : maxBody(0)
+Config::Config(const Config &x) : maxBody(0)
 {
-	*this = config;
+	*this = x;
 }
 
-Config &Config::operator=(const Config& config)
+Config &Config::operator=(const Config &x)
 {
-	if (this != &config)
+	if (this != &x)
 	{
-		this->root = config.root;
-		this->location_match = config.location_match;
-		this->autoindex = config.autoindex;
-		this->allow_method = config.allow_method;
-		this->indexes = config.indexes;
-		this->error_page = config.error_page;
-		this->maxBody = config.maxBody;
-		this->cgi_allowed_extensions = config.cgi_allowed_extensions;
-		this->default_cgi_path = config.default_cgi_path;
-		this->php_cgi = config.php_cgi;
-		this->auth_basic_realm = config.auth_basic_realm;
-		this->htpasswd_path = config.htpasswd_path;
-		this->loginfo = config.loginfo;
+		this->root = x.root;
+		this->locationMatch = x.locationMatch;
+		this->autoIndex = x.autoIndex;
+		this->allowedMethod = x.allowedMethod;
+		this->indexes = x.indexes;
+		this->errorPage = x.errorPage;
+		this->maxBody = x.maxBody;
+		this->cgiAllowedExtensions = x.cgiAllowedExtensions;
+		this->cgi_path = x.cgi_path;
+		this->php_cgi = x.php_cgi;
+		this->auth_basic_realm = x.auth_basic_realm;
+		this->htPasswdPath = x.htPasswdPath;
+		this->loginfo = x.loginfo;
 	}
 	return *this;
 }
 
-std::vector<method_w> stringToMethod(const std::vector<std::string>& strings)
+std::vector<method_w> stringToMethod(const std::vector<std::string> &in)
 {
-	std::vector<method_w> result;
-	for (std::vector<std::string>::const_iterator it = strings.begin(); it != strings.end(); it++)
+	std::vector<method_w> out;
+	for (std::vector<std::string>::const_iterator it = in.begin(); it != in.end(); it++)
 	{
 		if (*it == "HEAD")
-			result.push_back(HEAD);
+			out.push_back(HEAD);
 		else if (*it == "GET")
-			result.push_back(GET);
+			out.push_back(GET);
 		else if (*it == "POST")
-			result.push_back(POST);
+			out.push_back(POST);
 		else if (*it == "PUT")
-			result.push_back(PUT);
+			out.push_back(PUT);
 		else throw std::runtime_error("invalid method");
 	}
-	return (result);
+	return (out);
 }
 
-void Config::setAutoIndex(const std::string& in) { this->autoindex = in; }
+void Config::setAutoIndex(const std::string &autoIndex)
+{ this->autoIndex = autoIndex; }
 
-void Config::setAllowMethod(const std::string& in) { this->allow_method = ft::stringToMethod(ft::split(in, " \t\r\n\v\f")); }
+void Config::setAllowMethod(const std::string &method)
+{ this->allowedMethod = stringToMethod(ft::split(method, " \t\r\n\v\f")); }
 
-void Config::setIndex(const std::string& in) { this->indexes = ft::split(in, " \t\r\n\v\f"); }
+void Config::setIndex(const std::string &index)
+{ this->indexes = ft::split(index, " \t\r\n\v\f"); }
 
-void Config::setCgiAllowedExtensions(const std::string& in) { this->cgi_allowed_extensions = ft::split(in, " \t\r\n\v\f"); }
+void Config::setCgiAllowedExtensions(const std::string &extentions)
+{ this->cgiAllowedExtensions = ft::split(extentions, " \t\r\n\v\f"); }
 
-void Config::setErrorPage(const std::string& in) { this->error_page = in; }
+void Config::setErrorPage(const std::string &errorPage)
+{ this->errorPage = errorPage; }
 
-void Config::setMaxBody(const std::string& in) { this->maxBody = ft::atoi(in.c_str()); }
+void Config::setMaxBody(const std::string &maxBody)
+{ this->maxBody = ft::atoi(maxBody.c_str()); }
 
-void Config::setDefaultCgiPath(const std::string& in)
+void Config::setDefaultCgiPath(const std::string &path)
 {
 	struct stat statstruct = {};
-	if (stat(in.c_str(), &statstruct) != -1)
-		this->default_cgi_path = in;
+	if (stat(path.c_str(), &statstruct) != -1)
+		this->cgi_path = path;
 }
 
-void Config::setRoot(const std::string& in)
+void Config::setRoot(const std::string &root)
 {
 	struct stat statstruct = {};
-	this->root = in;
+	this->root = root;
 	if (stat(root.c_str(), &statstruct) == -1)
-		throw std::runtime_error("location root folder does not exist.");
+		throw std::runtime_error("Корневая папка root не существует или путь не корректен.");
 }
 
-void Config::setPhpCgiPath(const std::string& in)
+
+void Config::setPhpCgiPath(const std::string &path)
 {
 	struct stat statstruct = {};
-	this->php_cgi = in;
+	this->php_cgi = path;
 	if (stat(root.c_str(), &statstruct) == -1)
-		throw std::runtime_error("php-cgi executable path does not exist.");
+		throw std::runtime_error("Путь к исполняемому файлу php-cgi не существует или не корректен.");
 }
 
-std::string	Config::getRoot() const { return this->root; }
+std::string Config::getRoot() const
+{ return this->root; }
 
-std::string	Config::getAutoIndex() const { return this->autoindex; }
+std::string Config::getAutoIndex() const
+{ return this->autoIndex; }
 
-std::string	Config::getLocationMatch() const { return this->location_match; }
+std::string Config::getlocationmatch() const
+{ return this->locationMatch; }
 
-std::vector<std::string> Config::getIndexes() const { return this->indexes; }
+std::vector<std::string> Config::getIndexes() const
+{ return this->indexes; }
 
-std::vector<std::string> Config::getCgiAllowedExtensions() const { return this->cgi_allowed_extensions; }
+std::vector<std::string> Config::getCgiAllowedExtensions() const
+{ return this->cgiAllowedExtensions; }
 
-std::string	Config::getErrorPage() const { return this->getRoot() + '/' + this->error_page; }
+std::string Config::getErrorPage() const
+{ return this->getRoot() + '/' + this->errorPage; }
 
-long unsigned int Config::getMaxBody() const { return this->maxBody; }
+long unsigned int Config::getMaxBody() const
+{ return this->maxBody; }
 
-std::string	Config::getIndex() const
+std::string Config::getIndex() const
 {
 	struct stat statstruct = {};
 	for (size_t i = 0; i < this->indexes.size(); i++)
@@ -123,25 +139,27 @@ std::string	Config::getIndex() const
 	return "";
 }
 
-std::string	Config::getDefaultCgiPath() const { return this->default_cgi_path; }
+std::string Config::getDefaultCgiPath() const
+{ return this->cgi_path; }
 
-std::string	Config::getPhpCgiPath() const { return this->php_cgi; }
+std::string Config::getPhpCgiPath() const
+{ return this->php_cgi; }
 
-std::string	Config::getAllowedMethods() const
+std::string Config::getMethods() const
 {
 	std::string ret("Allow:");
-	for (size_t i = 0; i < this->allow_method.size(); ++i)
+	for (size_t i = 0; i < this->allowedMethod.size(); ++i)
 	{
 		if (i > 0)
 			ret += ',';
-		ret += " " + ft::methodToString(this->allow_method[i]);
+		ret += " " + ft::methodToString(this->allowedMethod[i]);
 	}
 	return (ret);
 }
 
-bool Config::checkIfMethodAllowed(const method_w& meth) const
+bool Config::isMethodAllowed(const method_w &meth) const
 {
-	for (std::vector<method_w>::const_iterator it = this->allow_method.begin(); it != this->allow_method.end(); ++it)
+	for (std::vector<method_w>::const_iterator it = this->allowedMethod.begin(); it != this->allowedMethod.end(); ++it)
 	{
 		if (*it == meth)
 			return true;
@@ -161,7 +179,7 @@ void Config::setup(int fd)
 	m["maxBody"] = &Config::setMaxBody;
 	m["default_cgi"] = &Config::setDefaultCgiPath;
 	m["php-cgi"] = &Config::setPhpCgiPath;
-	m["auth_basic"] = &Config::setAllowMethod;
+	m["auth_basic"] = &Config::setauth_basic;
 	m["auth_basic_user_file"] = &Config::setHtPasswdPath;
 	std::string str;
 
@@ -174,17 +192,17 @@ void Config::setup(int fd)
 			break;
 		ft::get_key_value(str, key, value);
 		if (!m.count(key))
-			std::cerr << _RED _BOLD << "Unable to parse key '" << key << "' in Location block " << this->getLocationMatch() << _END << std::endl;
+			std::cerr << "Unable to parse key '" << key << "' in Config block " << this->getlocationmatch() << std::endl;
 		(this->*(m.at(key)))(value);
 	}
 }
 
-void Config::setAuthBasicRealm(const std::string &realm)
+void Config::setauth_basic(const std::string &realm)
 {
 	this->auth_basic_realm = realm;
 }
 
-std::string	Config::getAuthBasicRealm() const
+std::string Config::getAuthBasicRealm() const
 {
 	return this->auth_basic_realm;
 }
@@ -195,8 +213,8 @@ void Config::setHtPasswdPath(const std::string &path)
 	if (stat(path.c_str(), &statstruct) == -1)
 		return;
 
-	this->htpasswd_path = path;
-	int htpasswd_fd = open(this->htpasswd_path.c_str(), O_RDONLY);
+	this->htPasswdPath = path;
+	int htpasswd_fd = open(this->htPasswdPath.c_str(), O_RDONLY);
 	if (htpasswd_fd < 0)
 		return;
 	std::string line;
@@ -210,23 +228,23 @@ void Config::setHtPasswdPath(const std::string &path)
 		throw std::runtime_error("Failed to close .htpasswd file");
 }
 
-std::string	Config::getHtPasswdPath() const
+std::string Config::getHtPasswdPath() const
 {
-	return this->htpasswd_path;
+	return this->htPasswdPath;
 }
 
-bool Config::getmatch(const std::string& username, const std::string& passwd)
+bool Config::getMatch(const std::string &username, const std::string &passwd)
 {
 	std::map<std::string, std::string>::const_iterator it = this->loginfo.find(username);
 
 	return (it != loginfo.end() && passwd == ft::base64_decode(it->second));
 }
 
-bool Config::isExtensionAllowed(const std::string& uri) const
+bool Config::isExtensionAllowed(const std::string &uri) const
 {
 	std::string extension = ft::getextension(uri);
 
-	for (std::vector<std::string>::const_iterator it = cgi_allowed_extensions.begin(); it != cgi_allowed_extensions.end(); ++it)
+	for (std::vector<std::string>::const_iterator it = cgiAllowedExtensions.begin(); it != cgiAllowedExtensions.end(); ++it)
 	{
 		if (extension == *it)
 			return (true);
@@ -234,23 +252,23 @@ bool Config::isExtensionAllowed(const std::string& uri) const
 	return (false);
 }
 
-std::ostream&	operator<<(std::ostream& os, const Config& config)
+std::ostream &operator<<(std::ostream &o, const Config &x)
 {
 	std::vector<std::string> v;
 	std::vector<method_w> meths;
-	os << "Location block \"" << config.getLocationMatch() << "\":" << std::endl
-	  << "root folder: \"" << config.getRoot() << "\"" << std::endl
-	  << "autoindex is: \"" << config.getAutoIndex() << "\"" << std::endl;
-	os << config.getAllowedMethods() << std::endl;
-	os << "indexes:";
-	v = config.getIndexes();
+	o << "Config block \"" << x.getlocationmatch() << "\":" << std::endl
+	  << "\troot folder: \"" << x.getRoot() << "\"" << std::endl
+	  << "\tautoindex is: \"" << x.getAutoIndex() << "\"" << std::endl;
+	o << '\t' << x.getMethods() << std::endl;
+	o << "\tindexes:";
+	v = x.getIndexes();
 	for (size_t i = 0; i < v.size(); i++)
-		os << " \"" << v[i] << "\"";
-	os << std::endl;
-	os << "cgi:";
-	v = config.getCgiAllowedExtensions();
+		o << " \"" << v[i] << "\"";
+	o << std::endl;
+	o << "\tcgi:";
+	v = x.getCgiAllowedExtensions();
 	for (size_t i = 0; i < v.size(); i++)
-		os << " \"" << v[i] << "\"";
-	os << std::endl;
-	return os;
+		o << " \"" << v[i] << "\"";
+	o << std::endl;
+	return o;
 }
