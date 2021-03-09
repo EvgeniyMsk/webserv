@@ -1,67 +1,63 @@
-#ifndef SERVER_HPP
-# define SERVER_HPP
+#ifndef Server_HPP
+#define Server_HPP
 
-# include	<vector>
-# include    "Config.hpp"
-# include	"Client.hpp"
+#include <queue>
+#include "Handler.hpp"
 
-#define BACKLOG 128
+#define TIMEOUT 10
+#define RETRY	"25"
 
-class Server {
+class Server
+{
+	friend class Config;
+	typedef std::map<std::string, std::string> 	elmt;
+	typedef std::map<std::string, elmt>			config;
+
+	private:
+		int						_fd;
+		int						_maxFd;
+		int						_port;
+		struct sockaddr_in		_info;
+		fd_set					*_readSet;
+		fd_set					*_writeSet;
+		fd_set					*_rSet;
+		fd_set					*_wSet;
+		Handler					_handler;
+		std::vector<config>		_conf;
+
 	public:
+		std::vector<Client*>	_clients;
+		std::queue<int>			_tmp_clients;
+		
 		Server();
-		explicit Server(int fd);
 		~Server();
-		Server(const Server& x);
-		Server& 	operator=(const Server& x);
-		friend class Connection;
 
-private:
-		void		setport(const std::string& );
-		void		sethost(const std::string& );
-		void		setindexes(const std::string& );
-		void		setroot(const std::string& );
-		void		setservername(const std::string& );
-		void		setmaxfilesize(const std::string& );
-		void		seterrorpage(const std::string& );
-		void		setautoindex(const std::string& );
-		void		configurelocation(const std::string& );
-public:
-		void		startListening();
-		int			addConnection();
-		std::vector<Client*> _connections;
-		size_t					getport() const;
-		std::string				gethost() const;
-		std::string				getindex() const;
-		std::string				getroot() const;
-		std::string				getservername() const;
-		long int				getmaxfilesize() const;
-		std::string				geterrorpage() const;
-		int 					getpage(const std::string& uri, std::map<header_w, std::string>&, bool autoindex) const;
-		std::vector<Config*> 	getlocations() const;
-		int						getSocketFd() const;
-		std::string 			getautoindex() const;
+		int		getMaxFd();
+		int		getFd() const;
+		int		getOpenFd();
+		void	init(fd_set *readSet, fd_set *writeSet, fd_set *rSet, fd_set *wSet);
+		void	refuseConnection();
+		void	acceptConnection();
+		int		readRequest(std::vector<Client*>::iterator it);
+		int		writeResponse(std::vector<Client*>::iterator it);
+		void	send503(int fd);
 
-		Config*	matchlocation(const std::string& uri) const;
-		std::string	getfilepath(const std::string& uri) const;
-		void		setup(int fd);
-		void		addServerInfoToLocation(Config* loc) const;
+	class		ServerException: public std::exception
+	{
+		private:
+			std::string function;
+			std::string error;
 
-private:
-		size_t		_port;
-		long int	_maxfilesize;
-		std::string _host,
-					_server_name,
-					_error_page,
-					_root,
-					_autoindex;
-		int			_fd,
-					_socketFd;
-		struct sockaddr_in	addr;
-		std::vector<std::string> _indexes;
-		std::vector<Config*> _locations;
+		public:
+			ServerException(void);
+			ServerException(std::string function, std::string error);
+			virtual	~ServerException(void) throw();	
+			virtual const char		*what(void) const throw();
+	};
+
+	private:
+		int		getTimeDiff(std::string start);
+
 };
-
-std::ostream&	operator<<(std::ostream& o, const Server& x);
 
 #endif

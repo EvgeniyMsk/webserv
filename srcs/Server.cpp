@@ -1,296 +1,299 @@
-#include	"Server.hpp"
-#include	<cerrno>
-#include	<sys/stat.h>
+#include "utils.h"
+#include "Server.hpp"
 
-Server::Server() : _port(80), _maxfilesize(1000000),
-		_host("0.0.0.0"), _error_page("error.html"),
-		_root("htmlfiles"),
-		_fd(), _socketFd(), addr() {
+extern bool					g_state;
+
+Server::Server() : _fd(-1), _maxFd(-1), _port(-1)
+{
+	memset(&_info, 0, sizeof(_info));
 }
 
-Server::Server(int fd) : _port(80), _maxfilesize(1000000),
-		_host("0.0.0.0"), _error_page("error.html"),
-		_root("htmlfiles"),
-		_socketFd(), addr() {
-	this->_fd = fd;
-}
+Server::~Server()
+{
+	Client		*client = NULL;
 
-Server::~Server() {
-	for (std::vector<Client*>::iterator cli = _connections.begin(); cli != _connections.end(); cli++) {
-		delete *cli;
+	if (_fd != -1)
+	{
+		for (std::vector<Client*>::iterator it(_clients.begin()); it != _clients.end(); ++it)
+		{
+			client = *it;
+			*it = NULL;
+			if (client)
+				delete client;
+		}
+		while (!_tmp_clients.empty())
+		{
+			close(_tmp_clients.front());
+			_tmp_clients.pop();
+		}
+		_clients.clear();
+		close(_fd);
+		FD_CLR(_fd, _rSet);
+		g_logger.log("[" + std::to_string(_port) + "] " + "closed", LOW);
 	}
-	for (std::vector<Config*>::iterator loc = _locations.begin(); loc != _locations.end(); loc++) {
-		delete *loc;
+}
+
+int		Server::getMaxFd()
+{
+	Client	*client;
+
+	for (std::vector<Client*>::iterator it(_clients.begin()); it != _clients.end(); ++it)
+	{
+		client = *it;
+		if (client->read_fd > _maxFd)
+			_maxFd = client->read_fd;
+		if (client->write_fd > _maxFd)
+			_maxFd = client->write_fd;
 	}
-	_connections.clear();
-	_locations.clear();
-	_indexes.clear();
-	close(_socketFd);
-	_socketFd = -1;
+	return (_maxFd);
 }
 
-Server::Server(const Server& x) : _port(), _maxfilesize(), _fd(), _socketFd(), addr() {
-	*this = x;
+int		Server::getFd() const
+{
+	return (_fd);
 }
 
-Server&	Server::operator=(const Server& x) {
-	if (this != &x) {
-		this->_port = x._port;
-		this->_host = x._host;
-		this->_server_name = x._server_name;
-		this->_maxfilesize = x._maxfilesize;
-		this->_error_page = x._error_page;
-		this->_indexes = x._indexes;
-		this->_root = x._root;
-		this->_locations = x._locations;
-		this->_socketFd = x._socketFd;
-		this->addr = x.addr;
+int		Server::getOpenFd()
+{
+	int 	nb = 0;
+	Client	*client;
 
-		this->_connections = x._connections;
+	for (std::vector<Client*>::iterator it(_clients.begin()); it != _clients.end(); ++it)
+	{
+		client = *it;
+		nb += 1;
+		if (client->read_fd != -1)
+			nb += 1;
+		if (client->write_fd != -1)
+			nb += 1;
 	}
-	return *this;
+	nb += _tmp_clients.size();
+	return (nb);
 }
 
-size_t	Server::getport() const {
-	return this->_port;
+void	Server::init(fd_set *readSet, fd_set *writeSet, fd_set *rSet, fd_set *wSet)
+{
+	int				yes = 1;
+	std::string		to_parse;
+	std::string		host;
+
+	_readSet = readSet;
+	_writeSet = writeSet;
+	_wSet = wSet;
+	_rSet = rSet;
+
+	to_parse = _conf[0]["server|"]["listen"];
+	errno = 0;
+	if ((_fd = socket(PF_INET, SOCK_STREAM, 0)) == -1)
+		throw(ServerException("socket()", std::string(strerror(errno))));
+    if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+		throw(ServerException("setsockopt()", std::string(strerror(errno))));
+    if (to_parse.find(":") != std::string::npos)
+    {
+    	host = to_parse.substr(0, to_parse.find(":"));
+    	if ((_port = atoi(to_parse.substr(to_parse.find(":") + 1).c_str())) < 0)
+			throw(ServerException("Wrong port", std::to_string(_port)));
+		_info.sin_addr.s_addr = inet_addr(host.c_str());
+		_info.sin_port = htons(_port);
+    }
+    else
+    {
+		_info.sin_addr.s_addr = INADDR_ANY;
+		if ((_port = atoi(to_parse.c_str())) < 0)
+			throw(ServerException("Wrong port", std::to_string(_port)));
+		_info.sin_port = htons(_port);
+    }
+	_info.sin_family = AF_INET;
+	if (bind(_fd, (struct sockaddr *)&_info, sizeof(_info)) == -1)
+		throw(ServerException("bind()", std::string(strerror(errno))));
+    if (listen(_fd, 256) == -1)
+		throw(ServerException("listen()", std::string(strerror(errno))));
+	if (fcntl(_fd, F_SETFL, O_NONBLOCK) == -1)
+		throw(ServerException("fcntl()", std::string(strerror(errno))));
+	FD_SET(_fd, _rSet);
+    _maxFd = _fd;
+    g_logger.log("[" + std::to_string(_port) + "] " + "listening...", LOW);
 }
 
-void	Server::setport(const std::string& port) {
-	this->_port = ft::atoi(port.c_str());
-}
+void	Server::refuseConnection()
+{
+	int 				fd = -1;
+	struct sockaddr_in	info;
+	socklen_t			len;
 
-std::string	Server::gethost() const {
-	return this->_host;
-}
-
-void	Server::sethost(const std::string& host) {
-	this->_host = host;
-}
-
-std::string	Server::getindex() const {
-	struct stat statstruct = {};
-	std::string filepath;
-	for (std::vector<std::string>::const_iterator it = _indexes.begin(); it != _indexes.end(); ++it) {
-		filepath = this->_root + *it;
-		if (stat(filepath.c_str(), &statstruct) != -1)
-			return *it;
+	errno = 0;
+	len = sizeof(struct sockaddr);
+	if ((fd = accept(_fd, (struct sockaddr *)&info, &len)) == -1)
+		throw(ServerException("accept()", std::string(strerror(errno))));
+	if (_tmp_clients.size() < 10)
+	{
+		_tmp_clients.push(fd);
+		FD_SET(fd, _wSet);
 	}
-	return this->_error_page;
+	else
+		close(fd);
 }
 
-void	Server::setindexes(const std::string& index) {
-	this->_indexes = ft::split(index, " \t\r\n\v\f");
+void	Server::acceptConnection()
+{
+	int 				fd = -1;
+	struct sockaddr_in	info;
+	socklen_t			len;
+	Client				*newOne = NULL;
+
+	memset(&info, 0, sizeof(struct sockaddr));
+	errno = 0;
+	len = sizeof(struct sockaddr);
+	if ((fd = accept(_fd, (struct sockaddr *)&info, &len)) == -1)
+		throw(ServerException("accept()", std::string(strerror(errno))));
+	if (fd > _maxFd)
+		_maxFd = fd;
+	newOne = new Client(fd, _rSet, _wSet, info);
+	_clients.push_back(newOne);
+	g_logger.log("[" + std::to_string(_port) + "] " + "connected clients: " + std::to_string(_clients.size()), LOW);
 }
 
-std::string	Server::getroot() const {
-	return this->_root;
+int		Server::readRequest(std::vector<Client*>::iterator it)
+{
+	int 		bytes;
+	int			ret;
+	Client		*client = NULL;
+	std::string	log;
+
+	client = *it;
+	bytes = strlen(client->rBuf);
+	ret = read(client->fd, client->rBuf + bytes, BUFFER_SIZE - bytes);
+	bytes += ret;
+	if (ret > 0)
+	{
+		client->rBuf[bytes] = '\0';
+		if (strstr(client->rBuf, "\r\n\r\n") != NULL
+			&& client->status != Client::BODYPARSING)
+		{
+			log = "REQUEST:\n";
+			log += client->rBuf;
+			g_logger.log(log, HIGH);
+			client->last_date = ft::getDate();
+			_handler.parseRequest(*client, _conf);
+			client->setWriteState(true);
+		}
+		if (client->status == Client::BODYPARSING)
+			_handler.parseBody(*client);
+		return (1);
+	}
+	else
+	{
+		*it = NULL;
+		_clients.erase(it);
+		if (client)
+			delete client;
+		g_logger.log("[" + std::to_string(_port) + "] " + "connected clients: " + std::to_string(_clients.size()), LOW);
+		return (0);
+	}
 }
 
-void	Server::setroot(const std::string& root) {
-	this->_root = root;
-}
+int		Server::writeResponse(std::vector<Client*>::iterator it)
+{
+	unsigned long	bytes;
+	std::string		tmp;
+	std::string		log;
+	Client			*client = NULL;
 
-std::string	Server::getservername() const {
-	return this->_server_name;
-}
-
-void	Server::setservername(const std::string& servername) {
-	this->_server_name = servername.substr(servername.find_first_not_of(" \t\r\n\f\v"), servername.find_last_not_of(" \t\r\n\f\v") - servername.find_first_not_of(" \t\r\n\f\v") + 1);
-}
-
-long int	Server::getmaxfilesize() const {
-	return this->_maxfilesize;
-}
-
-void	Server::setmaxfilesize(const std::string& clientbodysize) {
-	this->_maxfilesize = ft::atol(clientbodysize.c_str());
-	if (clientbodysize[clientbodysize.find_first_not_of("1234567890")] == 'M')
-		this->_maxfilesize *= 1000000;
-}
-
-std::string	Server::geterrorpage() const {
-	return this->getroot() + '/' + this->_error_page;
-}
-
-void	Server::seterrorpage(const std::string& errorpage) {
-	this->_error_page = errorpage;
-}
-
-
-void	Server::configurelocation(const std::string& in) {
-	std::vector<std::string> v = ft::split(in, " \t\r\n\v\f");
-	Config	*loc = new Config(v[0]);
-	loc->setup(this->_fd);
-	this->_locations.push_back(loc);
-}
-
-std::vector<Config*>	Server::getlocations() const {
-	return this->_locations;
-}
-
-void	Server::setup(int fd) {
-	this->_fd = fd;
-	std::map<std::string, void (Server::*)(const std::string&)> m;
-	m["port"] = &Server::setport;
-	m["host"] = &Server::sethost;
-	m["autoindex"] = &Server::setautoindex;
-	m["index"] = &Server::setindexes;
-	m["root"] = &Server::setroot;
-	m["server_name"] = &Server::setservername;
-	m["max_filesize"] = &Server::setmaxfilesize;
-	m["error_page"] = &Server::seterrorpage;
-	m["location"] = &Server::configurelocation;
-	std::string str;
-
-	while (ft::get_next_line(fd, str) > 0) {
-		std::string key, value;
-		if (str.empty() || ft::is_first_char(str) || ft::is_first_char(str, ';'))
-			continue ;
-		if (ft::is_first_char(str, '}'))
+	client = *it;
+	switch (client->status)
+	{
+		case Client::RESPONSE:
+			log = "RESPONSE:\n";
+			log += client->response.substr(0, 128);
+			g_logger.log(log, HIGH);
+			bytes = write(client->fd, client->response.c_str(), client->response.size());
+			if (bytes < client->response.size())
+				client->response = client->response.substr(bytes);
+			else
+			{
+				client->response.clear();
+				client->setToStandBy();
+			}
+			client->last_date = ft::getDate();
 			break ;
-		ft::get_key_value(str, key, value);
-		if (!m.count(key))
-			std::cerr << "Unable to parse key '" << key << "' in Server block " << this->getservername() << std::endl;
-		(this->*(m.at(key)))(value);
+		case Client::STANDBY:
+			if (getTimeDiff(client->last_date) >= TIMEOUT)
+				client->status = Client::DONE;
+			break ;
+		case Client::DONE:
+			delete client;
+			_clients.erase(it);
+			g_logger.log("[" + std::to_string(_port) + "] " + "connected clients: " + std::to_string(_clients.size()), LOW);
+			return (0);
+		default:
+			_handler.dispatcher(*client);
 	}
-	if (_port <= 0 || _host.empty() || _maxfilesize <= 0 || _error_page.empty() || _server_name.empty())
-		throw std::runtime_error("invalid setting in server block");
+	return (1);
 }
 
-int Server::getSocketFd() const {
-	return _socketFd;
-}
+void	Server::send503(int fd)
+{
+	Response		response;
+	std::string		str;
+	int				ret = 0;
 
-void Server::setautoindex(const std::string& ai) {
-	this->_autoindex = ai;
-}
-
-std::string Server::getautoindex() const {
-	return this->_autoindex;
-}
-
-Config* Server::matchlocation(const std::string &uri) const {
-	size_t		n;
-	Config*	out = _locations.front();
-
-	for (std::vector<Config*>::const_iterator it = this->_locations.begin() + 1; it != this->_locations.end(); ++it) {
-		n = (*it)->getlocationmatch().length();
-		if ((*it)->getlocationmatch()[n - 1] == '/' && n > 1)
-			n -= 1;
-		if (n >= out->getlocationmatch().length() && (*it)->getlocationmatch().compare(0, n, uri, 0, n) == 0)
-			out = *it;
+	response.version = "HTTP/1.1";
+	response.status_code = UNAVAILABLE;
+	response.headers["Retry-After"] = RETRY;
+	response.headers["Date"] = ft::getDate();
+	response.headers["Server"] = "webserv";
+	response.body = UNAVAILABLE;
+	response.headers["Content-Length"] = std::to_string(response.body.size());
+	std::map<std::string, std::string>::const_iterator b = response.headers.begin();
+	str = response.version + " " + response.status_code + "\r\n";
+	while (b != response.headers.end())
+	{
+		if (b->second != "")
+			str += b->first + ": " + b->second + "\r\n";
+		++b;
 	}
-	this->addServerInfoToLocation(out);
-	return (out);
-}
-
-std::string	Server::getfilepath(const std::string& uri) const {
-	Config* loca = this->matchlocation(uri);
-
-	std::string	TrimmedUri(uri),
-				filepath(loca->getRoot());
-	TrimmedUri.erase(0, loca->locationMatch.length());
-	if (filepath[filepath.length() - 1] != '/' && TrimmedUri[0] != '/')
-		filepath += '/';
-	filepath += TrimmedUri;
-	return (filepath);
+	str += "\r\n";
+	str += response.body;
+	ret = write(fd, str.c_str(), str.size());
+	if (ret >= -1)
+	{
+		close(fd);
+		FD_CLR(fd, _wSet);
+		_tmp_clients.pop();
+	}
+	g_logger.log("[" + std::to_string(_port) + "] " + "connection refused, sent 503", LOW);
 }
 
 
-int Server::getpage(const std::string &uri, std::map<header_w, std::string>& headervals, bool autoindex) const {
-	struct stat statstruct = {};
-	int fd = -1;
-	Config*	loca = this->matchlocation(uri);
-	std::string filepath = this->getfilepath(uri);
+int		Server::getTimeDiff(std::string start)
+{
+	struct tm		start_tm;
+	struct tm		*now_tm;
+	struct timeval	time;
+	int				result;
 
-	if (stat(filepath.c_str(), &statstruct) != -1) {
-		if (S_ISDIR(statstruct.st_mode)) {
-			if (filepath[filepath.length() - 1] != '/')
-				filepath += '/';
-			filepath += loca->getIndex();
-			if (!filepath.empty())
-				fd = open(filepath.c_str(), O_RDONLY);
-			if (autoindex == true && fd < 0)
-				return (-3);
-		} else if (!filepath.empty())
-			fd = open(filepath.c_str(), O_RDONLY);
-	} else if (autoindex == true && uri[uri.length() - 1] == '/')
-		return (-3);
- 	headervals[CONTENT_LOCATION] = filepath;
-	return (fd);
+	strptime(start.c_str(), "%a, %d %b %Y %T", &start_tm);
+	gettimeofday(&time, NULL);
+	now_tm = localtime(&time.tv_sec);
+	result = (now_tm->tm_hour - start_tm.tm_hour) * 3600;
+	result += (now_tm->tm_min - start_tm.tm_min) * 60;
+	result += (now_tm->tm_sec - start_tm.tm_sec);
+	return (result);
 }
 
-void Server::startListening() {
-	bzero(&addr, sizeof(addr));
-
-	if ((_socketFd = socket(PF_INET, SOCK_STREAM, 0)) == -1) {
-		std::cerr << "Error setting server socket\n";
-		throw std::runtime_error(strerror(errno));
-	}
-	int x = 1;
-	if (setsockopt(_socketFd, SOL_SOCKET, SO_REUSEPORT, &x, sizeof(x)) == -1) {
-		std::cerr << "Error setting server socket options\n";
-		throw std::runtime_error(strerror(errno));
-	}
-	
-	addr.sin_family = AF_INET;
-	if (gethost() == "localhost") {
-		addr.sin_addr.s_addr = INADDR_ANY;
-	}
-	else {
-		addr.sin_addr.s_addr = inet_addr(gethost().c_str());
-	}
-	addr.sin_port = htons(getport());
-
-	for (int i = 0; i < 6; ++i) {
-		if ((bind(this->_socketFd, (struct sockaddr *) &addr, sizeof(addr))) == -1) {
-			std::cerr << "Cannot bind (" << errno << " " << strerror(errno) << ")" << std::endl;
-			if (i == 5)
-				throw std::runtime_error(strerror(errno));
-		} else
-			break;
-	}
-	if (listen(this->_socketFd, BACKLOG) == -1) {
-		std::cerr << "Error listening to server socket\n";
-		throw std::runtime_error(strerror(errno));
-	}
-
-	if (fcntl(this->_socketFd, F_SETFL, O_NONBLOCK) == -1) {
-		std::cerr << "Error setting server socket to be nonblocking\n";
-		throw std::runtime_error(strerror(errno));
-	}
+Server::ServerException::ServerException(void)
+{
+	this->error = "Undefined Server Exception";	
 }
 
-int Server::addConnection() {
-	Client* newClient = new Client(this);
-	this->_connections.push_back(newClient);
-	return newClient->clientSocket;
+Server::ServerException::ServerException(std::string function, std::string error)
+{
+	this->error = function + ": " + error;
 }
 
-void Server::addServerInfoToLocation(Config* loc) const {
-	if (loc->root.empty())
-		loc->root = this->_root;
-	if (loc->autoIndex.empty())
-		loc->autoIndex = this->_autoindex;
-	if (loc->indexes.empty())
-		loc->indexes = this->_indexes;
-	if (loc->maxBody == 0)
-		loc->maxBody = this->_maxfilesize;
-	if (loc->errorPage.empty())
-		loc->errorPage = this->_error_page;
-}
+Server::ServerException::~ServerException(void) throw() {}
 
-std::ostream& operator<<( std::ostream& o, const Server& x) {
-	o << x.getservername() <<  " is listening on: " << x.gethost() << ":" << x.getport() << std::endl;
-	o << "Default root folder: " << x.getroot() << std::endl;
-	o << "Default index page: " << x.getindex() << std::endl;
-	o << "error page: " << x.geterrorpage() << std::endl;
-	o << "client body limit: " << x.getmaxfilesize() << std::endl << std::endl;
-	std::vector<Config*> v = x.getlocations();
-	for (size_t i = 0; i < v.size(); i++) {
-		o << *v[i];
-	}
-	o << std::endl;
-	return (o);
+const char			*Server::ServerException::what(void) const throw()
+{
+	return (this->error.c_str());
 }
-

@@ -1,101 +1,51 @@
-#ifndef LOCATION_HPP
-# define LOCATION_HPP
+ #ifndef CONFIG_HPP
+#define CONFIG_HPP
 
-# include <string>
-# include <map>
-# include <vector>
-# include "Utils.hpp"
+#include <fcntl.h>
+#include <unistd.h>
+#include <cstdlib>
+#include <string>
+#include <map>
+#include <vector>
+#include <iostream>
+#include "Server.hpp"
+
+#define MAX_FD 256 - 20
 
 class Config
 {
-public:
-	friend class Server;
+	typedef std::map<std::string, std::string> 	elmt;
+	typedef std::map<std::string, elmt>			config;
 
-	Config();
+	public:
+		Config();
+		~Config();
 
-	explicit Config(std::string &config);
+		static void	exit(int sig);
 
-	~Config();
+		void		parse(char *file, std::vector<Server> &servers);
+		void		init(fd_set *rSet, fd_set *wSet, fd_set *readSet, fd_set *writeSet, struct timeval *timeout);
+		int			getMaxFd(std::vector<Server> &Servers);
+		int			getOpenFd(std::vector<Server> &servers);
 
-	Config(const Config &);
+	class InvalidConfigFileException: public std::exception
+	{
+		private:
+			size_t						line;
+			std::string					error;
 
-	Config &operator=(const Config &config);
+			InvalidConfigFileException(void);
 
-private:
-	void setRoot(const std::string &);
+		public:
+			InvalidConfigFileException(size_t d);
+			virtual ~InvalidConfigFileException(void) throw();
+			size_t						getLine(void) const; 
+			virtual const char			*what(void) const throw();
+	};
 
-	void setAutoIndex(const std::string &);
-
-	void setAllowMethod(const std::string &);
-
-	void setIndex(const std::string &);
-
-	void setCgiAllowedExtensions(const std::string &);
-
-	void setErrorPage(const std::string &);
-
-	void setMaxBody(const std::string &);
-
-	void setDefaultCgiPath(const std::string &);
-
-	void setPhpCgiPath(const std::string &);
-
-	void setauth_basic(const std::string &);
-
-	void setHtPasswdPath(const std::string &);
-
-
-public:
-	std::string getRoot() const;
-
-	std::string getAutoIndex() const;
-
-	std::string getlocationmatch() const;
-
-	std::string getMethods() const;
-
-	std::string getIndex() const;
-
-	std::vector<std::string> getIndexes() const;
-
-	std::vector<std::string> getCgiAllowedExtensions() const;
-
-	std::string getErrorPage() const;
-
-	std::string getDefaultCgiPath() const;
-
-	long unsigned int getMaxBody() const;
-
-	std::string getPhpCgiPath() const;
-
-	std::string getAuthBasicRealm() const;
-
-	std::string getHtPasswdPath() const;
-
-	void setup(int);
-
-	bool isMethodAllowed(const method_w &meth) const;
-
-	bool getMatch(const std::string &username, const std::string &passwd);
-
-	bool isExtensionAllowed(const std::string &uri) const;
-
-private:
-	std::string root;
-	std::string autoIndex;
-	std::string locationMatch;
-	std::string errorPage;
-	std::string auth_basic_realm;
-	std::string htPasswdPath;
-	std::vector<std::string> indexes;
-	std::vector<std::string> cgiAllowedExtensions;
-	std::vector<method_w> allowedMethod;
-	long unsigned int maxBody;
-	std::string cgi_path;
-	std::string php_cgi;
-	std::map<std::string, std::string> loginfo;
+	private:
+		std::string	readFile(char *file);
+		void		getContent(std::string &buffer, std::string &context, std::string prec, size_t &nb_line, config &config);
 };
-
-std::ostream &operator<<(std::ostream &o, const Config &x);
 
 #endif

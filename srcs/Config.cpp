@@ -1,274 +1,232 @@
+#include "utils.h"
 #include "Config.hpp"
-#include <sys/stat.h>
-#include <climits>
 
-Config::Config() : maxBody(0), cgi_path()
-{
-	this->locationMatch = "";
-}
+extern	std::vector<Server> g_servers;
+extern	bool				g_state;
 
-Config::Config(std::string &location_match) : maxBody(0), cgi_path()
+Config::Config()
 {
-	this->locationMatch = location_match;
-	this->autoIndex = "off";
+
 }
 
 Config::~Config()
 {
-	loginfo.clear();
+
 }
 
-Config::Config(const Config &x) : maxBody(0)
+void			Config::exit(int sig)
 {
-	*this = x;
+	(void)sig;
+
+	std::cout << "\n" << "exiting...\n";
+	g_state = false;
 }
 
-Config &Config::operator=(const Config &x)
+void			Config::init(fd_set *rSet, fd_set *wSet, fd_set *readSet, fd_set *writeSet, struct timeval *timeout)
 {
-	if (this != &x)
+	signal(SIGINT, exit);
+	FD_ZERO(rSet);
+	FD_ZERO(wSet);
+	FD_ZERO(readSet);
+	FD_ZERO(writeSet);
+	timeout->tv_sec = 1;
+	timeout->tv_usec = 0;
+	for (std::vector<Server>::iterator it(g_servers.begin()); it != g_servers.end(); ++it)
+		it->init(readSet, writeSet, rSet, wSet);
+}
+
+std::string		Config::readFile(char *file)
+{
+	int 				fd;
+	int					ret;
+	char				buf[4096];
+	std::string			parsed;
+
+	fd = open(file, O_RDONLY);
+	while ((ret = read(fd, buf, 4095)) > 0)
 	{
-		this->root = x.root;
-		this->locationMatch = x.locationMatch;
-		this->autoIndex = x.autoIndex;
-		this->allowedMethod = x.allowedMethod;
-		this->indexes = x.indexes;
-		this->errorPage = x.errorPage;
-		this->maxBody = x.maxBody;
-		this->cgiAllowedExtensions = x.cgiAllowedExtensions;
-		this->cgi_path = x.cgi_path;
-		this->php_cgi = x.php_cgi;
-		this->auth_basic_realm = x.auth_basic_realm;
-		this->htPasswdPath = x.htPasswdPath;
-		this->loginfo = x.loginfo;
+		buf[ret] = '\0';
+		parsed += buf;
 	}
-	return *this;
+	close(fd);
+	return (parsed);
 }
 
-std::vector<method_w> stringToMethod(const std::vector<std::string> &in)
+void			Config::parse(char *file, std::vector<Server> &servers)
 {
-	std::vector<method_w> out;
-	for (std::vector<std::string>::const_iterator it = in.begin(); it != in.end(); it++)
+	size_t					d;
+	size_t					nb_line;
+	std::string				context;
+	std::string				buffer;
+	std::string				line;
+	Server					server;
+	config					tmp;
+
+	buffer = readFile(file);
+	nb_line = 0;
+	if (buffer.empty())
+		throw(Config::InvalidConfigFileException(nb_line));
+	while (!buffer.empty())
 	{
-		if (*it == "HEAD")
-			out.push_back(HEAD);
-		else if (*it == "GET")
-			out.push_back(GET);
-		else if (*it == "POST")
-			out.push_back(POST);
-		else if (*it == "PUT")
-			out.push_back(PUT);
-		else throw std::runtime_error("invalid method");
-	}
-	return (out);
-}
+		ft::getline(buffer, line);
+		nb_line++;
 
-void Config::setAutoIndex(const std::string &autoIndex)
-{ this->autoIndex = autoIndex; }
-
-void Config::setAllowMethod(const std::string &method)
-{ this->allowedMethod = stringToMethod(ft::split(method, " \t\r\n\v\f")); }
-
-void Config::setIndex(const std::string &index)
-{ this->indexes = ft::split(index, " \t\r\n\v\f"); }
-
-void Config::setCgiAllowedExtensions(const std::string &extentions)
-{ this->cgiAllowedExtensions = ft::split(extentions, " \t\r\n\v\f"); }
-
-void Config::setErrorPage(const std::string &errorPage)
-{ this->errorPage = errorPage; }
-
-void Config::setMaxBody(const std::string &maxBody)
-{ this->maxBody = ft::atoi(maxBody.c_str()); }
-
-void Config::setDefaultCgiPath(const std::string &path)
-{
-	struct stat statstruct = {};
-	if (stat(path.c_str(), &statstruct) != -1)
-		this->cgi_path = path;
-}
-
-void Config::setRoot(const std::string &root)
-{
-	struct stat statstruct = {};
-	this->root = root;
-	if (stat(root.c_str(), &statstruct) == -1)
-		throw std::runtime_error("Корневая папка root не существует или путь не корректен.");
-}
-
-
-void Config::setPhpCgiPath(const std::string &path)
-{
-	struct stat statstruct = {};
-	this->php_cgi = path;
-	if (stat(root.c_str(), &statstruct) == -1)
-		throw std::runtime_error("Путь к исполняемому файлу php-cgi не существует или не корректен.");
-}
-
-std::string Config::getRoot() const
-{ return this->root; }
-
-std::string Config::getAutoIndex() const
-{ return this->autoIndex; }
-
-std::string Config::getlocationmatch() const
-{ return this->locationMatch; }
-
-std::vector<std::string> Config::getIndexes() const
-{ return this->indexes; }
-
-std::vector<std::string> Config::getCgiAllowedExtensions() const
-{ return this->cgiAllowedExtensions; }
-
-std::string Config::getErrorPage() const
-{ return this->getRoot() + '/' + this->errorPage; }
-
-long unsigned int Config::getMaxBody() const
-{ return this->maxBody; }
-
-std::string Config::getIndex() const
-{
-	struct stat statstruct = {};
-	for (size_t i = 0; i < this->indexes.size(); i++)
-	{
-		std::string check = this->root + '/' + this->indexes[i];
-		if (stat(check.c_str(), &statstruct) != -1)
+		while (ft::isspace(line[0]))
+			line.erase(line.begin());
+		if (!line.compare(0, 6, "server"))
 		{
-			return this->indexes[i];
+			while (ft::isspace(line[6]))
+				line.erase(6, 1);
+			if (line[6] != '{')
+				throw(Config::InvalidConfigFileException(nb_line));
+			if (!line.compare(0, 7, "server{"))
+			{
+				d = 7;
+				while (ft::isspace(line[d]))
+					line.erase(7, 1);
+				if (line[d])
+					throw(Config::InvalidConfigFileException(nb_line));
+				getContent(buffer, context, line, nb_line, tmp); //may throw exception
+				std::vector<Server>::iterator it(servers.begin());
+				while (it != servers.end())
+				{
+					if (tmp["server|"]["listen"] == it->_conf.back()["server|"]["listen"])
+					{
+						if (tmp["server|"]["server_name"] == it->_conf.back()["server|"]["server_name"])
+							throw(Config::InvalidConfigFileException(nb_line));
+						else
+							it->_conf.push_back(tmp);
+						break ;
+					}
+					++it;
+				}
+				if (it == servers.end())
+				{
+					server._conf.push_back(tmp);
+					servers.push_back(server);
+				}
+				server._conf.clear();
+				tmp.clear();
+				context.clear();
+			}
+			else
+				throw(Config::InvalidConfigFileException(nb_line));
+		}
+		else if (line[0])
+			throw(Config::InvalidConfigFileException(nb_line));
+	}
+}
+
+int				Config::getMaxFd(std::vector<Server> &servers)
+{
+	int		max = 0;
+	int		fd;
+
+	for (std::vector<Server>::iterator it(servers.begin()); it != servers.end(); ++it)
+	{
+		fd = it->getMaxFd();
+		if (fd > max)
+			max = fd;
+	}
+	return (max);
+}
+
+int				Config::getOpenFd(std::vector<Server> &servers)
+{
+	int		nb = 0;
+
+	for (std::vector<Server>::iterator it(servers.begin()); it != servers.end(); ++it)
+	{
+		nb += 1;
+		nb += it->getOpenFd();
+	}
+	return (nb);
+}
+
+void			Config::getContent(std::string &buffer, std::string &context, std::string prec, size_t &nb_line, config &config)
+{
+	std::string			line;
+	std::string			key;
+	std::string			value;
+	size_t				pos;
+	size_t				tmp;
+
+	prec.pop_back();
+	while (prec.back() == ' ' || prec.back() == '\t')
+		prec.pop_back();
+	context += prec + "|";
+	while (ft::isspace(line[0]))
+		line.erase(line.begin());
+	while (line != "}" && !buffer.empty())
+	{
+		ft::getline(buffer, line);
+		nb_line++;
+		while (ft::isspace(line[0]))
+			line.erase(line.begin());
+		if (line[0] != '}')
+		{
+			pos = 0;
+			while (line[pos] && line[pos] != ';' && line[pos] != '{')
+			{
+				while (line[pos] && !ft::isspace(line[pos]))
+					key += line[pos++];
+				while (ft::isspace(line[pos]))
+					pos++;
+				while (line[pos] && line[pos] != ';' && line[pos] != '{')
+					value += line[pos++];
+			}
+			tmp = 0;
+			if (line[pos] != ';' && line[pos] != '{')
+				throw(Config::InvalidConfigFileException(nb_line));
+			else
+				tmp++;
+			while (ft::isspace(line[pos + tmp]))
+				tmp++;
+			if (line[pos + tmp])
+				throw(Config::InvalidConfigFileException(nb_line));
+			else if (line[pos] == '{')
+				getContent(buffer, context, line, nb_line, config);
+			else
+			{
+				std::pair<std::string, std::string>	tmp(key, value);
+				config[context].insert(tmp);
+				key.clear();
+				value.clear();
+			}
+
+		}
+		else if (line[0] == '}' && !buffer.empty())
+		{
+			pos = 0;
+			while (ft::isspace(line[++pos]))
+				line.erase(line.begin());
+			if (line[pos])
+				throw(Config::InvalidConfigFileException(nb_line));
+			context.pop_back();
+			context = context.substr(0, context.find_last_of('|') + 1);
 		}
 	}
-	return "";
+	if (line[0] != '}')
+		throw(Config::InvalidConfigFileException(nb_line));
 }
 
-std::string Config::getDefaultCgiPath() const
-{ return this->cgi_path; }
+Config::InvalidConfigFileException::InvalidConfigFileException(void) {this->line = 0;}
 
-std::string Config::getPhpCgiPath() const
-{ return this->php_cgi; }
-
-std::string Config::getMethods() const
-{
-	std::string ret("Allow:");
-	for (size_t i = 0; i < this->allowedMethod.size(); ++i)
-	{
-		if (i > 0)
-			ret += ',';
-		ret += " " + ft::methodToString(this->allowedMethod[i]);
-	}
-	return (ret);
+Config::InvalidConfigFileException::InvalidConfigFileException(size_t d) {
+	this->line = d;
+	this->error = "line " + std::to_string(this->line) + ": Invalid Config File";
 }
 
-bool Config::isMethodAllowed(const method_w &meth) const
+Config::InvalidConfigFileException::~InvalidConfigFileException(void) throw() {}
+
+size_t						Config::InvalidConfigFileException::getLine(void) const
 {
-	for (std::vector<method_w>::const_iterator it = this->allowedMethod.begin(); it != this->allowedMethod.end(); ++it)
-	{
-		if (*it == meth)
-			return true;
-	}
-	return false;
+	return (this->line);
 }
 
-void Config::setup(int fd)
+const char					*Config::InvalidConfigFileException::what(void) const throw()
 {
-	std::map<std::string, void (Config::*)(const std::string &)> m;
-	m["root"] = &Config::setRoot;
-	m["autoindex"] = &Config::setAutoIndex;
-	m["allow_method"] = &Config::setAllowMethod;
-	m["index"] = &Config::setIndex;
-	m["ext"] = &Config::setCgiAllowedExtensions;
-	m["error_page"] = &Config::setErrorPage;
-	m["maxBody"] = &Config::setMaxBody;
-	m["default_cgi"] = &Config::setDefaultCgiPath;
-	m["php-cgi"] = &Config::setPhpCgiPath;
-	m["auth_basic"] = &Config::setauth_basic;
-	m["auth_basic_user_file"] = &Config::setHtPasswdPath;
-	std::string str;
-
-	while (ft::get_next_line(fd, str) > 0)
-	{
-		std::string key, value;
-		if (str.empty() || ft::is_first_char(str) || ft::is_first_char(str, ';')) // checks for comments or empty lines
-			continue;
-		if (ft::is_first_char(str, '}')) // End of location block
-			break;
-		ft::get_key_value(str, key, value);
-		if (!m.count(key))
-			std::cerr << "Unable to parse key '" << key << "' in Config block " << this->getlocationmatch() << std::endl;
-		(this->*(m.at(key)))(value);
-	}
-}
-
-void Config::setauth_basic(const std::string &realm)
-{
-	this->auth_basic_realm = realm;
-}
-
-std::string Config::getAuthBasicRealm() const
-{
-	return this->auth_basic_realm;
-}
-
-void Config::setHtPasswdPath(const std::string &path)
-{
-	struct stat statstruct = {};
-	if (stat(path.c_str(), &statstruct) == -1)
-		return;
-
-	this->htPasswdPath = path;
-	int htpasswd_fd = open(this->htPasswdPath.c_str(), O_RDONLY);
-	if (htpasswd_fd < 0)
-		return;
-	std::string line;
-	while (ft::get_next_line(htpasswd_fd, line))
-	{
-		std::string user, pass;
-		ft::get_key_value(line, user, pass, ":");
-		this->loginfo[user] = pass;
-	}
-	if (close(htpasswd_fd) == -1)
-		throw std::runtime_error("Failed to close .htpasswd file");
-}
-
-std::string Config::getHtPasswdPath() const
-{
-	return this->htPasswdPath;
-}
-
-bool Config::getMatch(const std::string &username, const std::string &passwd)
-{
-	std::map<std::string, std::string>::const_iterator it = this->loginfo.find(username);
-
-	return (it != loginfo.end() && passwd == ft::base64_decode(it->second));
-}
-
-bool Config::isExtensionAllowed(const std::string &uri) const
-{
-	std::string extension = ft::getextension(uri);
-
-	for (std::vector<std::string>::const_iterator it = cgiAllowedExtensions.begin(); it != cgiAllowedExtensions.end(); ++it)
-	{
-		if (extension == *it)
-			return (true);
-	}
-	return (false);
-}
-
-std::ostream &operator<<(std::ostream &o, const Config &x)
-{
-	std::vector<std::string> v;
-	std::vector<method_w> meths;
-	o << "Config block \"" << x.getlocationmatch() << "\":" << std::endl
-	  << "\troot folder: \"" << x.getRoot() << "\"" << std::endl
-	  << "\tautoindex is: \"" << x.getAutoIndex() << "\"" << std::endl;
-	o << '\t' << x.getMethods() << std::endl;
-	o << "\tindexes:";
-	v = x.getIndexes();
-	for (size_t i = 0; i < v.size(); i++)
-		o << " \"" << v[i] << "\"";
-	o << std::endl;
-	o << "\tcgi:";
-	v = x.getCgiAllowedExtensions();
-	for (size_t i = 0; i < v.size(); i++)
-		o << " \"" << v[i] << "\"";
-	o << std::endl;
-	return o;
+	if (this->line)
+		return (error.c_str());
+	return ("Invalid Config File");
 }

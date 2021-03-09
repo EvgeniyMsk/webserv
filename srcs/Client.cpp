@@ -1,132 +1,162 @@
+#include "utils.h"
 #include "Client.hpp"
-#include "Server.hpp"
-#include <cerrno>
 
-int fuckingSIGPIPE;
-
-Client::Client(Server* S) : server(S), clientSocket(), port(), isConnected(true), addr(), size(sizeof(addr)), lastRequest(0), request()
+Client::Client(int filed, fd_set *r, fd_set *w, struct sockaddr_in info)
+: fd(filed), read_fd(-1), write_fd(-1), status(STANDBY), cgi_pid(-1), tmp_fd(-1), rSet(r), wSet(w)
 {
-	bzero(&addr, size);
-	this->clientSocket = accept(S->getSocketFd(), (struct sockaddr *) &addr, &size);
-	if (this->clientSocket == -1)
-	{
-		std::cerr << "Ошибка accept()\n";
-		throw std::runtime_error(strerror(errno));
-	}
-	if (fcntl(clientSocket, F_SETFL, O_NONBLOCK) == -1)
-	{
-		std::cerr << "Ошибка при установке неблокируемого соединения\n";
-		throw std::runtime_error(strerror(errno));
-	}
-	int opt = 1;
-	if (setsockopt(clientSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
-	{
-		std::cerr << "Ошибка установки опций сокета\n";
-		throw std::runtime_error(strerror(errno));
-	}
-	this->host = inet_ntoa(addr.sin_addr);
-	this->port = htons(addr.sin_port);
-	this->ipAddress = host + ':' + ft::inttostring(port);
-	if (CONNECTION_LOGS)
-		std::cerr << "Opened a new client for " << clientSocket << " at " << ipAddress << std::endl;
+	ip = inet_ntoa(info.sin_addr);
+	port = htons(info.sin_port);
+	rBuf = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	memset((void *)rBuf, 0, BUFFER_SIZE + 1);
+	fcntl(fd, F_SETFL, O_NONBLOCK);
+	FD_SET(fd, rSet);
+	FD_SET(fd, wSet);
+	chunk.len = 0;
+	chunk.done = false;
+	chunk.found = false;
+	last_date = ft::getDate();
+	g_logger.log("new connection from " + ip + ":" + std::to_string(port), LOW);
 }
 
 Client::~Client()
 {
-	close(clientSocket);
-	clientSocket = -1;
-	req.clear();
-	this->request.clear();
+	free(rBuf);
+	rBuf = NULL;
+	if (fd != -1)
+	{
+		close(fd);
+		FD_CLR(fd, rSet);
+		FD_CLR(fd, wSet);
+	}
+	if (read_fd != -1)
+	{
+		close(read_fd);
+		FD_CLR(read_fd, rSet);
+	}
+	if (write_fd != -1)
+	{
+		close(write_fd);
+		FD_CLR(write_fd, wSet);	
+	}
+	if (tmp_fd != -1)
+	{
+		close(tmp_fd);
+		unlink(TMP_PATH);
+	}
+	g_logger.log("connection closed from " + ip + ":" + std::to_string(port), LOW);
 }
 
-int Client::receiveRequest()
+void	Client::setReadState(bool state)
 {
-	char buf[BUFFERSIZE + 1];
-	int recvRet;
-	bool recvCheck(false);
-
-	memset(buf, 0, BUFFERSIZE);
-	this->resetTimeout();
-	while ((recvRet = recv(this->clientSocket, buf, BUFFERSIZE, 0)) > 0)
-	{
-		buf[recvRet] = '\0';
-		this->req.append(buf);
-		recvCheck = true;
-	}
-	if (!recvCheck or recvRet == 0)
-	{
-		this->isConnected = false;
-		return (0);
-	}
-	return (1);
+	if (state)
+		FD_SET(fd, rSet);
+	else
+		FD_CLR(fd, rSet);
 }
 
-void Client::sendReply(const char* msg, request_s& request) const
+void	Client::setWriteState(bool state)
 {
-	long bytesToSend = strlen(msg),
-			bytesSent(0),
-			sendRet;
+	if (state)
+		FD_SET(fd, wSet);
+	else
+		FD_CLR(fd, wSet);
+}
 
-	fuckingSIGPIPE = 0;
-	while (bytesToSend > 0)
+void	Client::setFileToRead(bool state)
+{
+	if (read_fd != -1)
 	{
-		sendRet = send(this->clientSocket, msg + bytesSent, bytesToSend, 0);
-		if (sendRet == -1)
+		if (state)
+			FD_SET(read_fd, rSet);
+		else
+			FD_CLR(read_fd, rSet);
+	}
+}
+
+void	Client::setFileToWrite(bool state)
+{
+	if (write_fd != -1)
+	{
+		if (state)
+			FD_SET(write_fd, wSet);
+		else
+			FD_CLR(write_fd, wSet);
+	}
+}
+
+void	Client::readFile()
+{
+	char			buffer[BUFFER_SIZE + 1];
+	int				ret = 0;
+	int				status = 0;
+
+	if (cgi_pid != -1)
+	{
+		if (waitpid((pid_t)cgi_pid, (int *)&status, (int)WNOHANG) == 0)
+			return ;
+		else
 		{
-			if (fuckingSIGPIPE == 0 && bytesToSend != 0)
-				continue;
-			throw std::runtime_error(strerror(errno));
+			if (WEXITSTATUS(status) == 1)
+			{
+				close(tmp_fd);
+				tmp_fd = -1;
+				cgi_pid = -1;
+				close(read_fd);
+				unlink(TMP_PATH);
+				setFileToRead(false);
+				read_fd = -1;
+				res.body = "Error with cgi\n";
+				return ;
+			}
 		}
-		bytesSent += sendRet;
-		bytesToSend -= sendRet;
 	}
-	static int i = 1, post = 1;
-	std::cerr << "sent response for req #" << i++ << " (" << ft::methodToString(request.method);
-	if (request.method == POST)
-		std::cerr << " #" << post++;
-	std::cerr << ").\n";
-}
-
-void Client::resetTimeout()
-{
-	this->lastRequest = ft::getTime();
-}
-
-void Client::checkTimeout()
-{
-	if (this->lastRequest)
+	ret = read(read_fd, buffer, BUFFER_SIZE);
+	if (ret >= 0)
+		buffer[ret] = '\0';
+	std::string	tmp(buffer, ret);
+	res.body += tmp;
+	if (ret == 0)
 	{
-		time_t diff = ft::getTime() - this->lastRequest;
-		if (diff > 10000000)
-			this->isConnected = false;
+		close(read_fd);
+		unlink(TMP_PATH);
+		setFileToRead(false);
+		read_fd = -1;
 	}
 }
 
-void Client::reset(const std::string& connection)
+void	Client::writeFile()
 {
-	if (connection == "close")
+	int ret = 0;
+
+	ret = write(write_fd, req.body.c_str(), req.body.size());
+	if (cgi_pid != -1)
+		g_logger.log("sent " + std::to_string(ret) + " bytes to CGI stdin", MED);
+	else
+		g_logger.log("write " + std::to_string(ret) + " bytes in file", MED);
+	if ((unsigned long)ret < req.body.size())
+		req.body = req.body.substr(ret);
+	else
 	{
-		if (CONNECTION_LOGS)
-			std::cerr << "We ain't resetting, we're closing this client, baby" << std::endl;
-		this->isConnected = false;
-		return;
-	} else if (!this->isConnected)
-		return;
-	if (CONNECTION_LOGS)
-		std::cerr << "Resetting client!\n";
-	this->isConnected = true;
+		req.body.clear();
+		close(write_fd);
+		setFileToWrite(false);
+		write_fd = -1;
+	}
+}
+
+void	Client::setToStandBy()
+{
+	g_logger.log(req.method + " from " + ip + ":" + std::to_string(port) + " answered", MED);
+	status = STANDBY;
+	setReadState(true);
+	if (read_fd != -1)
+		close(read_fd);
+	read_fd = -1;
+	if (write_fd != -1)
+		close(write_fd);
+	write_fd = -1;
+	memset((void *)rBuf, (int)0, (size_t)(BUFFER_SIZE + 1));
+	conf.clear();
 	req.clear();
-	lastRequest = 0;
-	this->request.clear();
-}
-
-Client::Client() : server(), clientSocket(), port(), isConnected(), addr(), size(), lastRequest()
-{
-
-}
-
-void Client::breakOnSIGPIPE(int)
-{
-	std::cerr << "Ошибка отправки ответа. Закрываю соединение.\n";
-	fuckingSIGPIPE = 1;
+	res.clear();
 }
