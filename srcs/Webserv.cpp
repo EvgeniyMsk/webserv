@@ -34,7 +34,7 @@ void Webserv::init()
 	for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
 	{
 		std::cout << RED GREY UNDER << "Конфиг для " << i + 1 << "-го cервера:" << END << std::endl;
-		for (std::vector<config>::iterator it1 = it->_conf.begin(); it1 != it->_conf.end(); it1++)
+		for (std::vector<config>::iterator it1 = it->config.begin(); it1 != it->config.end(); it1++)
 		{
 			for (std::map<std::string, std::map<std::string, std::string> >::iterator it2 = it1->begin(); it2 != it1->end(); it2++)
 			{
@@ -76,10 +76,10 @@ void Webserv::run()
 					std::cerr << "Error: " << e.what() << std::endl;
 				}
 			}
-			if (!it->_tmp_clients.empty())
-				if (FD_ISSET(it->_tmp_clients.front(), &w_write_set))
-					it->send503(it->_tmp_clients.front());
-			for (std::vector<Client *>::iterator client = it->_clients.begin(); client != it->_clients.end(); ++client)
+			if (!it->tmpClients.empty())
+				if (FD_ISSET(it->tmpClients.front(), &w_write_set))
+					it->send503(it->tmpClients.front());
+			for (std::vector<Client *>::iterator client = it->clients.begin(); client != it->clients.end(); ++client)
 			{
 				if (FD_ISSET((*client)->fd, &w_read_set))
 					if (!it->readRequest(client))
@@ -154,22 +154,22 @@ void Webserv::parse(char *file, std::vector<Server> &servs)
 				std::vector<Server>::iterator it(servs.begin());
 				while (it != servs.end())
 				{
-					if (tmp["server|"]["listen"] == it->_conf.back()["server|"]["listen"])
+					if (tmp["server|"]["listen"] == it->config.back()["server|"]["listen"])
 					{
-						if (tmp["server|"]["server_name"] == it->_conf.back()["server|"]["server_name"])
+						if (tmp["server|"]["server_name"] == it->config.back()["server|"]["server_name"])
 							throw (Webserv::InvalidConfigFileException(nb_line));
 						else
-							it->_conf.push_back(tmp);
+							it->config.push_back(tmp);
 						break;
 					}
 					++it;
 				}
 				if (it == servs.end())
 				{
-					server._conf.push_back(tmp);
+					server.config.push_back(tmp);
 					servs.push_back(server);
 				}
-				server._conf.clear();
+				server.config.clear();
 				tmp.clear();
 				context.clear();
 			} else

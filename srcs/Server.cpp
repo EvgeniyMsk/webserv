@@ -1,32 +1,32 @@
 #include "Server.hpp"
 
-Server::Server() : _fd(-1), _maxFd(-1), _port(-1)
+Server::Server() : serverSocket(-1), maxFd(-1), port(-1)
 {
-	memset(&_info, 0, sizeof(_info));
+	memset(&addr, 0, sizeof(addr));
 }
 
 Server::~Server()
 {
 	Client *client = nullptr;
 
-	if (_fd != -1)
+	if (serverSocket != -1)
 	{
-		for (std::vector<Client *>::iterator it(_clients.begin()); it != _clients.end(); ++it)
+		for (std::vector<Client *>::iterator it(clients.begin()); it != clients.end(); ++it)
 		{
 			client = *it;
 			*it = NULL;
 			if (client)
 				delete client;
 		}
-		while (!_tmp_clients.empty())
+		while (!tmpClients.empty())
 		{
-			close(_tmp_clients.front());
-			_tmp_clients.pop();
+			close(tmpClients.front());
+			tmpClients.pop();
 		}
-		_clients.clear();
-		close(_fd);
-		FD_CLR(_fd, _rSet);
-		utils::showMessage("[" + std::to_string(_port) + "] " + "closed");
+		clients.clear();
+		close(serverSocket);
+		FD_CLR(serverSocket, _rSet);
+		utils::showMessage("[" + std::to_string(port) + "] " + "closed");
 	}
 }
 
@@ -34,20 +34,20 @@ int Server::getMaxFd()
 {
 	Client *client;
 
-	for (std::vector<Client *>::iterator it(_clients.begin()); it != _clients.end(); ++it)
+	for (std::vector<Client *>::iterator it(clients.begin()); it != clients.end(); ++it)
 	{
 		client = *it;
-		if (client->read_fd > _maxFd)
-			_maxFd = client->read_fd;
-		if (client->write_fd > _maxFd)
-			_maxFd = client->write_fd;
+		if (client->read_fd > maxFd)
+			maxFd = client->read_fd;
+		if (client->write_fd > maxFd)
+			maxFd = client->write_fd;
 	}
-	return (_maxFd);
+	return (maxFd);
 }
 
 int Server::getFd() const
 {
-	return (_fd);
+	return (serverSocket);
 }
 
 int Server::getOpenFd()
@@ -55,7 +55,7 @@ int Server::getOpenFd()
 	int nb = 0;
 	Client *client;
 
-	for (std::vector<Client *>::iterator it(_clients.begin()); it != _clients.end(); ++it)
+	for (std::vector<Client *>::iterator it(clients.begin()); it != clients.end(); ++it)
 	{
 		client = *it;
 		nb += 1;
@@ -64,7 +64,7 @@ int Server::getOpenFd()
 		if (client->write_fd != -1)
 			nb += 1;
 	}
-	nb += _tmp_clients.size();
+	nb += tmpClients.size();
 	return (nb);
 }
 
@@ -79,36 +79,36 @@ void Server::init(fd_set *readSet, fd_set *writeSet, fd_set *rSet, fd_set *wSet)
 	_wSet = wSet;
 	_rSet = rSet;
 
-	to_parse = _conf[0]["server|"]["listen"];
+	to_parse = config[0]["server|"]["listen"];
 	errno = 0;
-	if ((_fd = socket(PF_INET, SOCK_STREAM, 0)) == -1)
+	if ((serverSocket = socket(PF_INET, SOCK_STREAM, 0)) == -1)
 		throw (ServerException("socket()", std::string(strerror(errno))));
-	if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+	if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
 		throw (ServerException("setsockopt()", std::string(strerror(errno))));
 	if (to_parse.find(":") != std::string::npos)
 	{
 		host = to_parse.substr(0, to_parse.find(":"));
-		if ((_port = atoi(to_parse.substr(to_parse.find(":") + 1).c_str())) < 0)
-			throw (ServerException("Wrong port", std::to_string(_port)));
-		_info.sin_addr.s_addr = inet_addr(host.c_str());
-		_info.sin_port = htons(_port);
+		if ((port = atoi(to_parse.substr(to_parse.find(":") + 1).c_str())) < 0)
+			throw (ServerException("Wrong port", std::to_string(port)));
+		addr.sin_addr.s_addr = inet_addr(host.c_str());
+		addr.sin_port = htons(port);
 	} else
 	{
-		_info.sin_addr.s_addr = INADDR_ANY;
-		if ((_port = atoi(to_parse.c_str())) < 0)
-			throw (ServerException("Wrong port", std::to_string(_port)));
-		_info.sin_port = htons(_port);
+		addr.sin_addr.s_addr = INADDR_ANY;
+		if ((port = atoi(to_parse.c_str())) < 0)
+			throw (ServerException("Wrong port", std::to_string(port)));
+		addr.sin_port = htons(port);
 	}
-	_info.sin_family = AF_INET;
-	if (bind(_fd, (struct sockaddr *) &_info, sizeof(_info)) == -1)
+	addr.sin_family = AF_INET;
+	if (bind(serverSocket, (struct sockaddr *) &addr, sizeof(addr)) == -1)
 		throw (ServerException("bind()", std::string(strerror(errno))));
-	if (listen(_fd, 256) == -1)
+	if (listen(serverSocket, 256) == -1)
 		throw (ServerException("listen()", std::string(strerror(errno))));
-	if (fcntl(_fd, F_SETFL, O_NONBLOCK) == -1)
+	if (fcntl(serverSocket, F_SETFL, O_NONBLOCK) == -1)
 		throw (ServerException("fcntl()", std::string(strerror(errno))));
-	FD_SET(_fd, _rSet);
-	_maxFd = _fd;
-	utils::showMessage("[" + std::to_string(_port) + "] " + "listening...");
+	FD_SET(serverSocket, _rSet);
+	maxFd = serverSocket;
+	utils::showMessage("[" + std::to_string(port) + "] " + "listening...");
 }
 
 void Server::refuseConnection()
@@ -119,11 +119,11 @@ void Server::refuseConnection()
 
 	errno = 0;
 	len = sizeof(struct sockaddr);
-	if ((fd = accept(_fd, (struct sockaddr *) &info, &len)) == -1)
+	if ((fd = accept(serverSocket, (struct sockaddr *) &info, &len)) == -1)
 		throw (ServerException("accept()", std::string(strerror(errno))));
-	if (_tmp_clients.size() < 10)
+	if (tmpClients.size() < 10)
 	{
-		_tmp_clients.push(fd);
+		tmpClients.push(fd);
 		FD_SET(fd, _wSet);
 	} else
 		close(fd);
@@ -139,13 +139,13 @@ void Server::acceptConnection()
 	memset(&info, 0, sizeof(struct sockaddr));
 	errno = 0;
 	len = sizeof(struct sockaddr);
-	if ((fd = accept(_fd, (struct sockaddr *) &info, &len)) == -1)
+	if ((fd = accept(serverSocket, (struct sockaddr *) &info, &len)) == -1)
 		throw (ServerException("accept()", std::string(strerror(errno))));
-	if (fd > _maxFd)
-		_maxFd = fd;
+	if (fd > maxFd)
+		maxFd = fd;
 	newOne = new Client(fd, _rSet, _wSet, info);
-	_clients.push_back(newOne);
-	utils::showMessage("[" + std::to_string(_port) + "] " + "connected clients: " + std::to_string(_clients.size()));
+	clients.push_back(newOne);
+	utils::showMessage("[" + std::to_string(port) + "] " + "connected clients: " + std::to_string(clients.size()));
 }
 
 int Server::readRequest(std::vector<Client *>::iterator it)
@@ -169,22 +169,22 @@ int Server::readRequest(std::vector<Client *>::iterator it)
 			log += client->buffer;
 			utils::showMessage(log);
 			client->lastDate = ft::getDate();
-			_handler.parseRequest(*client, _conf);
+			http.parseRequest(*client, config);
 			client->setWriteState(true);
 		}
 
 
 
 		if (client->status == BODYPARSING)
-			_handler.parseBody(*client);
+			http.parseBody(*client);
 		return (1);
 	} else
 	{
 		*it = NULL;
-		_clients.erase(it);
+		clients.erase(it);
 		if (client)
 			delete client;
-		utils::showMessage("[" + std::to_string(_port) + "] " + "connected clients: " + std::to_string(_clients.size()));
+		utils::showMessage("[" + std::to_string(port) + "] " + "connected clients: " + std::to_string(clients.size()));
 		return (0);
 	}
 }
@@ -219,11 +219,11 @@ int Server::writeResponse(std::vector<Client *>::iterator it)
 			break;
 		case DONE:
 			delete client;
-			_clients.erase(it);
-			utils::showMessage("[" + std::to_string(_port) + "] " + "connected clients: " + std::to_string(_clients.size()));
+			clients.erase(it);
+			utils::showMessage("[" + std::to_string(port) + "] " + "connected clients: " + std::to_string(clients.size()));
 			return (0);
 		default:
-			_handler.dispatcher(*client);
+			http.dispatcher(*client);
 	}
 	return (1);
 }
@@ -256,9 +256,9 @@ void Server::send503(int fd)
 	{
 		close(fd);
 		FD_CLR(fd, _wSet);
-		_tmp_clients.pop();
+		tmpClients.pop();
 	}
-	utils::showMessage("[" + std::to_string(_port) + "] " + "connection refused, sent 503");
+	utils::showMessage("[" + std::to_string(port) + "] " + "connection refused, sent 503");
 }
 
 

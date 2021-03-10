@@ -11,25 +11,22 @@ class Server
 {
 	friend class Webserv;
 
-	typedef std::map<std::string, std::string> elmt;
-	typedef std::map<std::string, elmt> config;
-
 private:
-	int _fd;
-	int _maxFd;
-	int _port;
-	struct sockaddr_in _info;
+	int serverSocket;
+	int maxFd;
+	int port;
+	struct sockaddr_in addr;
 	fd_set *_readSet;
 	fd_set *_writeSet;
 	fd_set *_rSet;
 	fd_set *_wSet;
-	HTTP _handler;
+	HTTP http;
 
 
 public:
-	std::vector<Client *> _clients;
-	std::queue<int> _tmp_clients;
-	std::vector<config> _conf;
+	std::vector<Client *> clients;
+	std::queue<int> tmpClients;
+	std::vector<Config> config;
 	Server();
 
 	~Server();

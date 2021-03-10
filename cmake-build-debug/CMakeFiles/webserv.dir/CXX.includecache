@@ -6,10 +6,6 @@
 
 #IncludeRegexTransform: 
 
-/Users/qsymond/Desktop/webserv/srcs/Client.cpp
-Client.hpp
-/Users/qsymond/Desktop/webserv/srcs/Client.hpp
-
 /Users/qsymond/Desktop/webserv/srcs/Client.hpp
 sys/wait.h
 -
@@ -32,10 +28,6 @@ map
 Utils.hpp
 /Users/qsymond/Desktop/webserv/srcs/Utils.hpp
 
-/Users/qsymond/Desktop/webserv/srcs/HTTP.cpp
-HTTP.hpp
-/Users/qsymond/Desktop/webserv/srcs/HTTP.hpp
-
 /Users/qsymond/Desktop/webserv/srcs/HTTP.hpp
 vector
 -
@@ -57,12 +49,6 @@ queue
 -
 HTTP.hpp
 /Users/qsymond/Desktop/webserv/srcs/HTTP.hpp
-
-/Users/qsymond/Desktop/webserv/srcs/Utils.cpp
-string
--
-Utils.hpp
-/Users/qsymond/Desktop/webserv/srcs/Utils.hpp
 
 /Users/qsymond/Desktop/webserv/srcs/Utils.hpp
 string
