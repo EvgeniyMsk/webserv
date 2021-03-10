@@ -3,7 +3,6 @@
 
 namespace ft
 {
-
 	bool isSpace(int c)
 	{
 		if (c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f' ||
@@ -89,5 +88,34 @@ namespace ft
 			++i;
 		}
 		free(env);
+	}
+}
+
+namespace utils
+{
+	std::string getTime()
+	{
+		time_t now = 0;
+		tm *ltm = NULL;
+		char buffer[1024];
+		std::string result;
+
+		now = time(0);
+		if (now)
+			ltm = localtime(&now);
+		strftime(buffer, 1024, "%d/%m/%y %T", ltm);
+		result = buffer;
+		result.insert(result.begin(), '[');
+		result.insert(result.end(), ']');
+		return (result);
+	}
+
+	void showMessage(std::string text)
+	{
+		std::string log;
+
+		log += getTime();
+		log += " " + text;
+		std::cout << log << std::endl;
 	}
 }

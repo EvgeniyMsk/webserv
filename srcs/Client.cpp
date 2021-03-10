@@ -1,99 +1,99 @@
-#include "Utils.hpp"
 #include "Client.hpp"
 
-Client::Client(int filed, fd_set *r, fd_set *w, struct sockaddr_in info)
-		: fd(filed), read_fd(-1), write_fd(-1), status(STANDBY), cgi_pid(-1), tmp_fd(-1), rSet(r), wSet(w)
+
+Client::Client(int clientSocket, fd_set *new_read_set, fd_set *new_write_set, struct sockaddr_in info)
+		: fd(clientSocket), read_fd(-1), write_fd(-1), status(STANDBY), cgi_pid(-1), tmp_fd(-1), read_set(new_read_set), write_set(new_write_set)
 {
 	ip = inet_ntoa(info.sin_addr);
 	port = htons(info.sin_port);
-	rBuf = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
-	memset((void *)rBuf, 0, BUFFER_SIZE + 1);
+	buffer = (char *) malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	memset((void *) buffer, 0, BUFFER_SIZE + 1);
 	fcntl(fd, F_SETFL, O_NONBLOCK);
-	FD_SET(fd, rSet);
-	FD_SET(fd, wSet);
-	chunk.len = 0;
-	chunk.done = false;
-	chunk.found = false;
-	last_date = ft::getDate();
-	g_logger.log("new connection from " + ip + ":" + std::to_string(port), LOW);
+	FD_SET(fd, read_set);
+	FD_SET(fd, write_set);
+	chunk.length = 0;
+	chunk.isDone = false;
+	chunk.isFound = false;
+	lastDate = ft::getDate();
+	utils::showMessage("new connection from " + ip + ":" + std::to_string(port));
 }
 
 Client::~Client()
 {
-	free(rBuf);
-	rBuf = NULL;
+	free(buffer);
+	buffer = NULL;
 	if (fd != -1)
 	{
 		close(fd);
-		FD_CLR(fd, rSet);
-		FD_CLR(fd, wSet);
+		FD_CLR(fd, read_set);
+		FD_CLR(fd, write_set);
 	}
 	if (read_fd != -1)
 	{
 		close(read_fd);
-		FD_CLR(read_fd, rSet);
+		FD_CLR(read_fd, read_set);
 	}
 	if (write_fd != -1)
 	{
 		close(write_fd);
-		FD_CLR(write_fd, wSet);
+		FD_CLR(write_fd, write_set);
 	}
 	if (tmp_fd != -1)
 	{
 		close(tmp_fd);
 		unlink(TMP_PATH);
 	}
-	g_logger.log("connection closed from " + ip + ":" + std::to_string(port), LOW);
+	utils::showMessage("connection closed from " + ip + ":" + std::to_string(port));
 }
 
-void	Client::setReadState(bool state)
+void Client::setReadState(bool state)
 {
 	if (state)
-		FD_SET(fd, rSet);
+		FD_SET(fd, read_set);
 	else
-		FD_CLR(fd, rSet);
+		FD_CLR(fd, read_set);
 }
 
-void	Client::setWriteState(bool state)
+void Client::setWriteState(bool state)
 {
 	if (state)
-		FD_SET(fd, wSet);
+		FD_SET(fd, write_set);
 	else
-		FD_CLR(fd, wSet);
+		FD_CLR(fd, write_set);
 }
 
-void	Client::setFileToRead(bool state)
+void Client::setFileToRead(bool state)
 {
 	if (read_fd != -1)
 	{
 		if (state)
-			FD_SET(read_fd, rSet);
+			FD_SET(read_fd, read_set);
 		else
-			FD_CLR(read_fd, rSet);
+			FD_CLR(read_fd, read_set);
 	}
 }
 
-void	Client::setFileToWrite(bool state)
+void Client::setFileToWrite(bool state)
 {
 	if (write_fd != -1)
 	{
 		if (state)
-			FD_SET(write_fd, wSet);
+			FD_SET(write_fd, write_set);
 		else
-			FD_CLR(write_fd, wSet);
+			FD_CLR(write_fd, write_set);
 	}
 }
 
-void	Client::readFile()
+void Client::readFile()
 {
-	char			buffer[BUFFER_SIZE + 1];
-	int				ret = 0;
-	int				status = 0;
+	char buffer[BUFFER_SIZE + 1];
+	int result = 0;
+	int status = 0;
 
 	if (cgi_pid != -1)
 	{
-		if (waitpid((pid_t)cgi_pid, (int *)&status, (int)WNOHANG) == 0)
-			return ;
+		if (waitpid((pid_t) cgi_pid, (int *) &status, (int) WNOHANG) == 0)
+			return;
 		else
 		{
 			if (WEXITSTATUS(status) == 1)
@@ -105,17 +105,17 @@ void	Client::readFile()
 				unlink(TMP_PATH);
 				setFileToRead(false);
 				read_fd = -1;
-				res.body = "Error with cgi\n";
-				return ;
+				response.body = "Error with cgi\n";
+				return;
 			}
 		}
 	}
-	ret = read(read_fd, buffer, BUFFER_SIZE);
-	if (ret >= 0)
-		buffer[ret] = '\0';
-	std::string	tmp(buffer, ret);
-	res.body += tmp;
-	if (ret == 0)
+	result = read(read_fd, buffer, BUFFER_SIZE);
+	if (result >= 0)
+		buffer[result] = '\0';
+	std::string tmp(buffer, result);
+	response.body += tmp;
+	if (result == 0)
 	{
 		close(read_fd);
 		unlink(TMP_PATH);
@@ -124,29 +124,29 @@ void	Client::readFile()
 	}
 }
 
-void	Client::writeFile()
+void Client::writeFile()
 {
-	int ret = 0;
+	int result = 0;
 
-	ret = write(write_fd, req.body.c_str(), req.body.size());
+	result = write(write_fd, request.body.c_str(), request.body.size());
 	if (cgi_pid != -1)
-		g_logger.log("sent " + std::to_string(ret) + " bytes to CGI stdin", MED);
+		utils::showMessage("sent " + std::to_string(result) + " bytes to CGI stdin");
 	else
-		g_logger.log("write " + std::to_string(ret) + " bytes in file", MED);
-	if ((unsigned long)ret < req.body.size())
-		req.body = req.body.substr(ret);
+		utils::showMessage("write " + std::to_string(result) + " bytes in file");
+	if ((unsigned long) result < request.body.size())
+		request.body = request.body.substr(result);
 	else
 	{
-		req.body.clear();
+		request.body.clear();
 		close(write_fd);
 		setFileToWrite(false);
 		write_fd = -1;
 	}
 }
 
-void	Client::setToStandBy()
+void Client::setToStandBy()
 {
-	g_logger.log(req.method + " from " + ip + ":" + std::to_string(port) + " answered", MED);
+	utils::showMessage(request.method + " from " + ip + ":" + std::to_string(port) + " answered");
 	status = STANDBY;
 	setReadState(true);
 	if (read_fd != -1)
@@ -155,8 +155,8 @@ void	Client::setToStandBy()
 	if (write_fd != -1)
 		close(write_fd);
 	write_fd = -1;
-	memset((void *)rBuf, (int)0, (size_t)(BUFFER_SIZE + 1));
-	conf.clear();
-	req.clear();
-	res.clear();
+	memset((void *) buffer, (int) 0, (size_t) (BUFFER_SIZE + 1));
+	clientConfig.clear();
+	request.clear();
+	response.clear();
 }

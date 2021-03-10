@@ -2,7 +2,7 @@
 
 HTTP::HTTP()
 {
-
+	assignMIME();
 }
 
 HTTP::~HTTP()
@@ -10,13 +10,13 @@ HTTP::~HTTP()
 
 }
 
-void			HTTP::parseRequest(Client &client, std::vector<config> &conf)
+void HTTP::parseRequest(Client &client, std::vector<Config> &config)
 {
-	Request				request;
-	std::string			tmp;
-	std::string			buffer;
+	Request request;
+	std::string tmp;
+	std::string buffer;
 
-	buffer = std::string(client.rBuf);
+	buffer = std::string(client.buffer);
 	if (buffer[0] == '\r')
 		buffer.erase(buffer.begin());
 	if (buffer[0] == '\n')
@@ -27,39 +27,38 @@ void			HTTP::parseRequest(Client &client, std::vector<config> &conf)
 	if (parseHeaders(buffer, request))
 		request.isValid = checkSyntax(request);
 	if (request.uri != "*" || request.method != "OPTIONS")
-		getConf(client, request, conf);
+		getConf(client, request, config);
 	if (request.isValid)
 	{
-		if (client.conf["root"][0] != '\0')
-			chdir(client.conf["root"].c_str());
+		if (client.clientConfig["root"][0] != '\0')
+			chdir(client.clientConfig["root"].c_str());
 		if (request.method == "POST" || request.method == "PUT")
 			client.status = BODYPARSING;
 		else
 			client.status = CODE;
-	}
-	else
+	} else
 	{
 		request.method = "BAD";
 		client.status = CODE;
 	}
-	client.req = request;
-	tmp = client.rBuf;
+	client.request = request;
+	tmp = client.buffer;
 	tmp = tmp.substr(tmp.find("\r\n\r\n") + 4);
-	strcpy(client.rBuf, tmp.c_str());
+	strcpy(client.buffer, tmp.c_str());
 }
 
-bool			HTTP::parseHeaders(std::string &buf, Request &req)
+bool HTTP::parseHeaders(std::string &buf, Request &req)
 {
-	size_t		pos;
-	std::string	line;
-	std::string	key;
-	std::string	value;
+	size_t pos;
+	std::string line;
+	std::string key;
+	std::string value;
 
 	while (!buf.empty())
 	{
 		ft::get_next_line(buf, line);
 		if (line.size() < 1 || line[0] == '\n' || line[0] == '\r')
-			break ;
+			break;
 		if (line.find(':') != std::string::npos)
 		{
 			pos = line.find(':');
@@ -75,8 +74,7 @@ bool			HTTP::parseHeaders(std::string &buf, Request &req)
 			}
 			req.headers[key] = value;
 			req.headers[key].pop_back(); //remove '\r'
-		}
-		else
+		} else
 		{
 			req.isValid = false;
 			return (false);
@@ -85,91 +83,90 @@ bool			HTTP::parseHeaders(std::string &buf, Request &req)
 	return (true);
 }
 
-void			HTTP::parseBody(Client &client)
+void HTTP::parseBody(Client &client)
 {
-	if (client.req.headers.find("Content-Length") != client.req.headers.end())
+	if (client.request.headers.find("Content-Length") != client.request.headers.end())
 		getBody(client);
-	else if (client.req.headers["Transfer-Encoding"] == "chunked")
+	else if (client.request.headers["Transfer-Encoding"] == "chunked")
 		dechunkBody(client);
 	else
 	{
-		client.req.method = "BAD";
+		client.request.method = "BAD";
 		client.status = CODE;
 	}
 	if (client.status == CODE)
-		g_logger.log("body size parsed from " + client.ip + ":" + std::to_string(client.port) + ": " + std::to_string(client.req.body.size()), MED);
+		utils::showMessage(
+				"body size parsed from " + client.ip + ":" + std::to_string(client.port) + ": " + std::to_string(client.request.body.size()));
 }
 
-void			HTTP::getBody(Client &client)
+void HTTP::getBody(Client &client)
 {
-	unsigned int	bytes;
+	unsigned int bytes;
 
-	if (client.chunk.len == 0)
-		client.chunk.len = atoi(client.req.headers["Content-Length"].c_str());
-	if (client.chunk.len < 0)
+	if (client.chunk.length == 0)
+		client.chunk.length = atoi(client.request.headers["Content-Length"].c_str());
+	if (client.chunk.length < 0)
 	{
-		client.req.method = "BAD";
+		client.request.method = "BAD";
 		client.status = CODE;
-		return ;
+		return;
 	}
-	bytes = strlen(client.rBuf);
-	if (bytes >= client.chunk.len)
+	bytes = strlen(client.buffer);
+	if (bytes >= client.chunk.length)
 	{
-		memset(client.rBuf + client.chunk.len, 0, BUFFER_SIZE - client.chunk.len);
-		client.req.body += client.rBuf;
-		client.chunk.len = 0;
+		memset(client.buffer + client.chunk.length, 0, BUFFER_SIZE - client.chunk.length);
+		client.request.body += client.buffer;
+		client.chunk.length = 0;
 		client.status = CODE;
-	}
-	else
+	} else
 	{
-		client.chunk.len -= bytes;
-		client.req.body += client.rBuf;
-		memset(client.rBuf, 0, BUFFER_SIZE + 1);
+		client.chunk.length -= bytes;
+		client.request.body += client.buffer;
+		memset(client.buffer, 0, BUFFER_SIZE + 1);
 	}
 }
 
-void			HTTP::dechunkBody(Client &client)
+void HTTP::dechunkBody(Client &client)
 {
-	if (strstr(client.rBuf, "\r\n") && client.chunk.found == false)
+	if (strstr(client.buffer, "\r\n") && !client.chunk.isFound)
 	{
-		client.chunk.len = _helper.findLen(client);
-		if (client.chunk.len == 0)
-			client.chunk.done = true;
+		client.chunk.length = findLen(client);
+		if (client.chunk.length == 0)
+			client.chunk.isDone = true;
 		else
-			client.chunk.found = true;
-	}
-	else if (client.chunk.found == true)
-		_helper.fillBody(client);
-	if (client.chunk.done)
+			client.chunk.isFound = true;
+	} else if (client.chunk.isFound)
+		fillBody(client);
+	if (client.chunk.isDone)
 	{
-		memset(client.rBuf, 0, BUFFER_SIZE + 1);
+		memset(client.buffer, 0, BUFFER_SIZE + 1);
 		client.status = CODE;
-		client.chunk.found = false;
-		client.chunk.done = false;
-		return ;
+		client.chunk.isFound = false;
+		client.chunk.isDone = false;
+		return;
 	}
 }
 
-void			HTTP::getConf(Client &client, Request &req, std::vector<config> &conf)
+void HTTP::getConf(Client &client, Request &req, std::vector<Config> &conf)
 {
 	std::map<std::string, std::string> elmt;
-	std::string		tmp;
-	std::string 	file;
-	struct stat		info;
-	config			to_parse;
+	std::string tmp;
+	std::string file;
+	struct stat info;
+	Config to_parse;
 
 	if (!req.isValid)
 	{
-		client.conf["error"] = conf[0]["server|"]["error"];
-		return ;
+		client.clientConfig["error"] = conf[0]["server|"]["error"];
+		return;
 	}
-	std::vector<config>::iterator it(conf.begin());
+	std::vector<Config>::iterator it(conf.begin());
 	while (it != conf.end())
 	{
 		if (req.headers["Host"] == (*it)["server|"]["server_name"])
 		{
 			to_parse = *it;
-			break ;
+			break;
 		}
 		++it;
 	}
@@ -182,7 +179,7 @@ void			HTTP::getConf(Client &client, Request &req, std::vector<config> &conf)
 		if (to_parse.find("server|location " + tmp + "|") != to_parse.end())
 		{
 			elmt = to_parse["server|location " + tmp + "|"];
-			break ;
+			break;
 		}
 		tmp = tmp.substr(0, tmp.find_last_of('/'));
 	} while (tmp != "");
@@ -191,37 +188,37 @@ void			HTTP::getConf(Client &client, Request &req, std::vector<config> &conf)
 			elmt = to_parse["server|location /|"];
 	if (elmt.size() > 0)
 	{
-		client.conf = elmt;
-		client.conf["path"] = req.uri.substr(0, req.uri.find("?"));
+		client.clientConfig = elmt;
+		client.clientConfig["path"] = req.uri.substr(0, req.uri.find("?"));
 		if (elmt.find("root") != elmt.end())
-			client.conf["path"].replace(0, tmp.size(), elmt["root"]);
+			client.clientConfig["path"].replace(0, tmp.size(), elmt["root"]);
 	}
 	for (std::map<std::string, std::string>::iterator it(to_parse["server|"].begin()); it != to_parse["server|"].end(); ++it)
 	{
-		if (client.conf.find(it->first) == client.conf.end())
-			client.conf[it->first] = it->second;
+		if (client.clientConfig.find(it->first) == client.clientConfig.end())
+			client.clientConfig[it->first] = it->second;
 	}
-	lstat(client.conf["path"].c_str(), &info);
+	lstat(client.clientConfig["path"].c_str(), &info);
 	if (S_ISDIR(info.st_mode))
-		if (client.conf["index"][0] && client.conf["listing"] != "on")
-			client.conf["path"] += "/" + elmt["index"];
+		if (client.clientConfig["index"][0] && client.clientConfig["listing"] != "on")
+			client.clientConfig["path"] += "/" + elmt["index"];
 	if (req.method == "GET")
-		client.conf["savedpath"] = client.conf["path"];
-	g_logger.log("path requested from " + client.ip + ":" + std::to_string(client.port) + ": " + client.conf["path"], MED);
+		client.clientConfig["savedpath"] = client.clientConfig["path"];
+	utils::showMessage("path requested from " + client.ip + ":" + std::to_string(client.port) + ": " + client.clientConfig["path"]);
 }
 
-void			HTTP::negotiate(Client &client)
+void HTTP::negotiate(Client &client)
 {
-	std::multimap<std::string, std::string> 	languageMap;
-	std::multimap<std::string, std::string> 	charsetMap;
-	int				fd = -1;
-	std::string		path;
-	std::string		ext;
+	std::multimap<std::string, std::string> languageMap;
+	std::multimap<std::string, std::string> charsetMap;
+	int fd = -1;
+	std::string path;
+	std::string ext;
 
-	if (client.req.headers.find("Accept-Language") != client.req.headers.end())
-		_helper.parseAcceptLanguage(client, languageMap);
-	if (client.req.headers.find("Accept-Charset") != client.req.headers.end())
-		_helper.parseAcceptCharset(client, charsetMap);
+	if (client.request.headers.find("Accept-Language") != client.request.headers.end())
+		parseAcceptLanguage(client, languageMap);
+	if (client.request.headers.find("Accept-Charset") != client.request.headers.end())
+		parseAcceptCharset(client, charsetMap);
 	if (!languageMap.empty())
 	{
 		for (std::multimap<std::string, std::string>::reverse_iterator it(languageMap.rbegin()); it != languageMap.rend(); ++it)
@@ -231,90 +228,88 @@ void			HTTP::negotiate(Client &client)
 				for (std::multimap<std::string, std::string>::reverse_iterator it2(charsetMap.rbegin()); it2 != charsetMap.rend(); ++it2)
 				{
 					ext = it->second + "." + it2->second;
-					path = client.conf["savedpath"] + "." + ext;
+					path = client.clientConfig["savedpath"] + "." + ext;
 					fd = open(path.c_str(), O_RDONLY);
 					if (fd != -1)
 					{
-						client.res.headers["Content-Language"] = it->second;
-						break ;
+						client.response.headers["Content-Language"] = it->second;
+						break;
 					}
 					ext = it2->second + "." + it->second;
-					path = client.conf["savedpath"] + "." + ext;
+					path = client.clientConfig["savedpath"] + "." + ext;
 					fd = open(path.c_str(), O_RDONLY);
 					if (fd != -1)
 					{
-						client.res.headers["Content-Language"] = it->second;
-						break ;
+						client.response.headers["Content-Language"] = it->second;
+						break;
 					}
 				}
-			}
-			else
+			} else
 			{
 				ext = it->second;
-				path = client.conf["savedpath"] + "." + ext;
+				path = client.clientConfig["savedpath"] + "." + ext;
 				fd = open(path.c_str(), O_RDONLY);
 				if (fd != -1)
 				{
-					client.res.headers["Content-Language"] = it->second;
-					break ;
+					client.response.headers["Content-Language"] = it->second;
+					break;
 				}
 			}
 		}
-	}
-	else if (languageMap.empty())
+	} else if (languageMap.empty())
 	{
 		if (!charsetMap.empty())
 		{
 			for (std::multimap<std::string, std::string>::reverse_iterator it2(charsetMap.rbegin()); it2 != charsetMap.rend(); ++it2)
 			{
 				ext = it2->second;
-				path = client.conf["savedpath"] + "." + it2->second;
+				path = client.clientConfig["savedpath"] + "." + it2->second;
 				fd = open(path.c_str(), O_RDONLY);
 				if (fd != -1)
-					break ;
+					break;
 			}
 		}
 	}
 	if (fd != -1)
 	{
-		client.conf["path"] = path;
-		client.res.headers["Content-Location"] = client.req.uri + "." + ext;
+		client.clientConfig["path"] = path;
+		client.response.headers["Content-Location"] = client.request.uri + "." + ext;
 		if (client.read_fd != -1)
 			close(client.read_fd);
 		client.read_fd = fd;
-		client.res.statusCode = OK;
+		client.response.statusCode = OK;
 	}
 }
 
-void			HTTP::createListing(Client &client)
+void HTTP::createListing(Client &client)
 {
-	DIR				*dir;
-	struct dirent	*cur;
+	DIR *dir;
+	struct dirent *cur;
 
 	close(client.read_fd);
 	client.read_fd = -1;
-	dir = opendir(client.conf["path"].c_str());
-	client.res.body = "<html>\n<body>\n";
-	client.res.body += "<h1>Directory listing</h1>\n";
-	while ((cur = readdir(dir)) != NULL)
+	dir = opendir(client.clientConfig["path"].c_str());
+	client.response.body = "<html>\n<body>\n";
+	client.response.body += "<h1>Autoindex: on</h1>\n";
+	while ((cur = readdir(dir)) != nullptr)
 	{
 		if (cur->d_name[0] != '.')
 		{
-			client.res.body += "<a href=\"" + client.req.uri;
-			if (client.req.uri != "/")
-				client.res.body += "/";
-			client.res.body += cur->d_name;
-			client.res.body += "\">";
-			client.res.body += cur->d_name;
-			client.res.body += "</a><br>\n";
+			client.response.body += "<a href=\"" + client.request.uri;
+			if (client.request.uri != "/")
+				client.response.body += "/";
+			client.response.body += cur->d_name;
+			client.response.body += "\">";
+			client.response.body += cur->d_name;
+			client.response.body += "</a><br>\n";
 		}
 	}
 	closedir(dir);
-	client.res.body += "</body>\n</html>\n";
+	client.response.body += "</body>\n</html>\n";
 }
 
 //TO COMPLETE
-bool			HTTP::checkSyntax(const Request &req)
+bool HTTP::checkSyntax(const Request &req)
 {
 	if (req.method.size() == 0 || req.uri.size() == 0
 		|| req.version.size() == 0)
@@ -333,30 +328,30 @@ bool			HTTP::checkSyntax(const Request &req)
 	return (true);
 }
 
-void			HTTP::execCGI(Client &client)
+void HTTP::execCGI(Client &client)
 {
-	char			**args = NULL;
-	char			**env = NULL;
-	std::string		path;
-	int				ret;
-	int				tubes[2];
+	char **args = NULL;
+	char **env = NULL;
+	std::string path;
+	int ret;
+	int tubes[2];
 
-	if (client.conf["php"][0] && client.conf["path"].find(".php") != std::string::npos)
-		path = client.conf["php"];
-	else if (client.conf["exec"][0])
-		path = client.conf["exec"];
+	if (client.clientConfig["php"][0] && client.clientConfig["path"].find(".php") != std::string::npos)
+		path = client.clientConfig["php"];
+	else if (client.clientConfig["exec"][0])
+		path = client.clientConfig["exec"];
 	else
-		path = client.conf["path"];
+		path = client.clientConfig["path"];
 	close(client.read_fd);
 	client.read_fd = -1;
-	args = (char **)(malloc(sizeof(char *) * 3));
+	args = (char **) (malloc(sizeof(char *) * 3));
 	args[0] = strdup(path.c_str());
-	args[1] = strdup(client.conf["path"].c_str());
-	args[2] = NULL;
-	env = _helper.setEnv(client);
+	args[1] = strdup(client.clientConfig["path"].c_str());
+	args[2] = nullptr;
+	env = setEnv(client);
 	client.tmp_fd = open(TMP_PATH, O_WRONLY | O_CREAT, 0666);
 	pipe(tubes);
-	g_logger.log("executing CGI for " + client.ip + ":" + std::to_string(client.port), MED);
+	utils::showMessage("executing CGI for " + client.ip + ":" + std::to_string(client.port));
 	if ((client.cgi_pid = fork()) == 0)
 	{
 		close(tubes[1]);
@@ -369,8 +364,7 @@ void			HTTP::execCGI(Client &client)
 			std::cerr << "Error with CGI: " << strerror(errno) << std::endl;
 			exit(1);
 		}
-	}
-	else
+	} else
 	{
 		close(tubes[0]);
 		client.write_fd = tubes[1];
@@ -380,24 +374,24 @@ void			HTTP::execCGI(Client &client)
 	ft::freeAll(args, env);
 }
 
-void		HTTP::parseCGIResult(Client &client)
+void HTTP::parseCGIResult(Client &client)
 {
-	size_t			pos;
-	std::string		headers;
-	std::string		key;
-	std::string		value;
+	size_t pos;
+	std::string headers;
+	std::string key;
+	std::string value;
 
-	if (client.res.body.find("\r\n\r\n") == std::string::npos)
-		return ;
-	headers = client.res.body.substr(0, client.res.body.find("\r\n\r\n") + 1);
+	if (client.response.body.find("\r\n\r\n") == std::string::npos)
+		return;
+	headers = client.response.body.substr(0, client.response.body.find("\r\n\r\n") + 1);
 	pos = headers.find("Status");
 	if (pos != std::string::npos)
 	{
-		client.res.statusCode.clear();
+		client.response.statusCode.clear();
 		pos += 8;
 		while (headers[pos] != '\r')
 		{
-			client.res.statusCode += headers[pos];
+			client.response.statusCode += headers[pos];
 			pos++;
 		}
 	}
@@ -415,7 +409,7 @@ void		HTTP::parseCGIResult(Client &client)
 			value += headers[pos];
 			++pos;
 		}
-		client.res.headers[key] = value;
+		client.response.headers[key] = value;
 		key.clear();
 		value.clear();
 		if (headers[pos] == '\r')
@@ -423,31 +417,31 @@ void		HTTP::parseCGIResult(Client &client)
 		if (headers[pos] == '\n')
 			pos++;
 	}
-	pos = client.res.body.find("\r\n\r\n") + 4;
-	client.res.body = client.res.body.substr(pos);
-	client.res.headers["Content-Length"] = std::to_string(client.res.body.size());
+	pos = client.response.body.find("\r\n\r\n") + 4;
+	client.response.body = client.response.body.substr(pos);
+	client.response.headers["Content-Length"] = std::to_string(client.response.body.size());
 }
 
-void		HTTP::createResponse(Client &client)
+void HTTP::createResponse(Client &client)
 {
 	std::map<std::string, std::string>::const_iterator b;
 
-	client.response = client.res.version + " " + client.res.statusCode + "\r\n";
-	b = client.res.headers.begin();
-	while (b != client.res.headers.end())
+	client.textResponse = client.response.version + " " + client.response.statusCode + "\r\n";
+	b = client.response.headers.begin();
+	while (b != client.response.headers.end())
 	{
 		if (b->second != "")
-			client.response += b->first + ": " + b->second + "\r\n";
+			client.textResponse += b->first + ": " + b->second + "\r\n";
 		++b;
 	}
-	client.response += "\r\n";
-	client.response += client.res.body;
-	client.res.clear();
+	client.textResponse += "\r\n";
+	client.textResponse += client.response.body;
+	client.response.clear();
 }
 
-void	HTTP::dispatcher(Client &client)
+void HTTP::dispatcher(Client &client)
 {
-	typedef void	(HTTP::*ptr)(Client &client);
+	typedef void    (HTTP::*ptr)(Client &client);
 	std::map<std::string, ptr> map;
 
 	map["GET"] = &HTTP::handleGet;
@@ -460,59 +454,59 @@ void	HTTP::dispatcher(Client &client)
 	map["DELETE"] = &HTTP::handleDelete;
 	map["BAD"] = &HTTP::handleBadRequest;
 
-	(this->*map[client.req.method])(client);
+	(this->*map[client.request.method])(client);
 }
 
-void	HTTP::handleGet(Client &client)
+void HTTP::handleGet(Client &client)
 {
-	struct stat	file_info;
-	std::string	credential;
+	struct stat file_info;
+	std::string credential;
 
 	switch (client.status)
 	{
 		case CODE:
-			_helper.getStatusCode(client);
+			getStatusCode(client);
 			fstat(client.read_fd, &file_info);
-			if (S_ISDIR(file_info.st_mode) && client.conf["listing"] == "on")
+			if (S_ISDIR(file_info.st_mode) && client.clientConfig["listing"] == "on")
 				createListing(client);
-			if (client.res.statusCode == NOTFOUND)
+			if (client.response.statusCode == NOTFOUND)
 				negotiate(client);
-			if (((client.conf.find("CGI") != client.conf.end() && client.req.uri.find(client.conf["CGI"]) != std::string::npos)
-				 || (client.conf.find("php") != client.conf.end() && client.req.uri.find(".php") != std::string::npos))
-				&& client.res.statusCode == OK)
+			if (((client.clientConfig.find("CGI") != client.clientConfig.end() &&
+				  client.request.uri.find(client.clientConfig["CGI"]) != std::string::npos)
+				 || (client.clientConfig.find("php") != client.clientConfig.end() && client.request.uri.find(".php") != std::string::npos))
+				&& client.response.statusCode == OK)
 			{
 				execCGI(client);
-				client.status =CGI;
-			}
-			else
+				client.status = CGI;
+			} else
 				client.status = HEADERS;
 			client.setFileToRead(true);
-			break ;
+			break;
 		case CGI:
 			if (client.read_fd == -1)
 			{
 				parseCGIResult(client);
 				client.status = HEADERS;
 			}
-			break ;
+			break;
 		case HEADERS:
-			lstat(client.conf["path"].c_str(), &file_info);
+			lstat(client.clientConfig["path"].c_str(), &file_info);
 			if (!S_ISDIR(file_info.st_mode))
-				client.res.headers["Last-Modified"] = _helper.getLastModified(client.conf["path"]);
-			if (client.res.headers["Content-Type"][0] == '\0')
-				client.res.headers["Content-Type"] = _helper.findType(client);
-			if (client.res.statusCode == UNAUTHORIZED)
-				client.res.headers["WWW-Authenticate"] = "Basic";
-			else if (client.res.statusCode == NOTALLOWED)
-				client.res.headers["Allow"] = client.conf["methods"];
-			client.res.headers["Date"] = ft::getDate();
-			client.res.headers["Server"] = "webserv";
+				client.response.headers["Last-Modified"] = getLastModified(client.clientConfig["path"]);
+			if (client.response.headers["Content-Type"][0] == '\0')
+				client.response.headers["Content-Type"] = findType(client);
+			if (client.response.statusCode == UNAUTHORIZED)
+				client.response.headers["WWW-Authenticate"] = "Basic";
+			else if (client.response.statusCode == NOTALLOWED)
+				client.response.headers["Allow"] = client.clientConfig["methods"];
+			client.response.headers["Date"] = ft::getDate();
+			client.response.headers["Server"] = "webserv";
 			client.status = BODY;
-			break ;
+			break;
 		case BODY:
 			if (client.read_fd == -1)
 			{
-				client.res.headers["Content-Length"] = std::to_string(client.res.body.size());
+				client.response.headers["Content-Length"] = std::to_string(client.response.body.size());
 				createResponse(client);
 				client.status = RESPONSE;
 			}
@@ -520,263 +514,785 @@ void	HTTP::handleGet(Client &client)
 	}
 }
 
-void	HTTP::handleHead(Client &client)
+void HTTP::handleHead(Client &client)
 {
-	struct stat	file_info;
+	struct stat file_info;
 
 	switch (client.status)
 	{
 		case CODE:
-			_helper.getStatusCode(client);
+			getStatusCode(client);
 			fstat(client.read_fd, &file_info);
-			if (S_ISDIR(file_info.st_mode) && client.conf["listing"] == "on")
+			if (S_ISDIR(file_info.st_mode) && client.clientConfig["listing"] == "on")
 				createListing(client);
-			else if (client.res.statusCode == NOTFOUND)
+			else if (client.response.statusCode == NOTFOUND)
 				negotiate(client);
 			fstat(client.read_fd, &file_info);
-			if (client.res.statusCode == OK)
+			if (client.response.statusCode == OK)
 			{
-				client.res.headers["Last-Modified"] = _helper.getLastModified(client.conf["path"]);
-				client.res.headers["Content-Type"] = _helper.findType(client);
-			}
-			else if (client.res.statusCode == UNAUTHORIZED)
-				client.res.headers["WWW-Authenticate"] = "Basic";
-			else if (client.res.statusCode == NOTALLOWED)
-				client.res.headers["Allow"] = client.conf["methods"];
-			client.res.headers["Date"] = ft::getDate();
-			client.res.headers["Server"] = "webserv";
-			client.res.headers["Content-Length"] = std::to_string(file_info.st_size);
+				client.response.headers["Last-Modified"] = getLastModified(client.clientConfig["path"]);
+				client.response.headers["Content-Type"] = findType(client);
+			} else if (client.response.statusCode == UNAUTHORIZED)
+				client.response.headers["WWW-Authenticate"] = "Basic";
+			else if (client.response.statusCode == NOTALLOWED)
+				client.response.headers["Allow"] = client.clientConfig["methods"];
+			client.response.headers["Date"] = ft::getDate();
+			client.response.headers["Server"] = "webserv";
+			client.response.headers["Content-Length"] = std::to_string(file_info.st_size);
 			createResponse(client);
 			client.status = RESPONSE;
-			break ;
+			break;
 	}
 }
 
-void	HTTP::handlePost(Client &client)
+void HTTP::handlePost(Client &client)
 {
 	switch (client.status)
 	{
 		case BODYPARSING:
 			parseBody(client);
-			break ;
+			break;
 		case CODE:
-			_helper.getStatusCode(client);
-			if (((client.conf.find("CGI") != client.conf.end() && client.req.uri.find(client.conf["CGI"]) != std::string::npos)
-				 || (client.conf.find("php") != client.conf.end() && client.req.uri.find(".php") != std::string::npos))
-				&& client.res.statusCode == OK)
+			getStatusCode(client);
+			if (((client.clientConfig.find("CGI") != client.clientConfig.end() &&
+				  client.request.uri.find(client.clientConfig["CGI"]) != std::string::npos)
+				 || (client.clientConfig.find("php") != client.clientConfig.end() && client.request.uri.find(".php") != std::string::npos))
+				&& client.response.statusCode == OK)
 			{
 				execCGI(client);
 				client.status = CGI;
 				client.setFileToRead(true);
-			}
-			else
+			} else
 			{
-				if (client.res.statusCode == OK || client.res.statusCode == CREATED)
+				if (client.response.statusCode == OK || client.response.statusCode == CREATED)
 					client.setFileToWrite(true);
 				else
 					client.setFileToRead(true);
 				client.status = HEADERS;
 			}
-			break ;
+			break;
 		case CGI:
 			if (client.read_fd == -1)
 			{
 				parseCGIResult(client);
 				client.status = HEADERS;
 			}
-			break ;
+			break;
 		case HEADERS:
-			if (client.res.statusCode == UNAUTHORIZED)
-				client.res.headers["WWW-Authenticate"] = "Basic";
-			else if (client.res.statusCode == NOTALLOWED)
-				client.res.headers["Allow"] = client.conf["methods"];
-			client.res.headers["Date"] = ft::getDate();
-			client.res.headers["Server"] = "webserv";
-			if (client.res.statusCode == CREATED)
-				client.res.body = "File created\n";
-			else if (client.res.statusCode == OK && !((client.conf.find("CGI") != client.conf.end() && client.req.uri.find(client.conf["CGI"]) != std::string::npos)
-													  || (client.conf.find("php") != client.conf.end() && client.req.uri.find(".php") != std::string::npos)))
-				client.res.body = "File modified\n";
+			if (client.response.statusCode == UNAUTHORIZED)
+				client.response.headers["WWW-Authenticate"] = "Basic";
+			else if (client.response.statusCode == NOTALLOWED)
+				client.response.headers["Allow"] = client.clientConfig["methods"];
+			client.response.headers["Date"] = ft::getDate();
+			client.response.headers["Server"] = "webserv";
+			if (client.response.statusCode == CREATED)
+				client.response.body = "File created\n";
+			else if (client.response.statusCode == OK && !((client.clientConfig.find("CGI") != client.clientConfig.end() &&
+															client.request.uri.find(client.clientConfig["CGI"]) != std::string::npos)
+														   || (client.clientConfig.find("php") != client.clientConfig.end() &&
+															   client.request.uri.find(".php") != std::string::npos)))
+				client.response.body = "File modified\n";
 			client.status = BODY;
-			break ;
+			break;
 		case BODY:
 			if (client.read_fd == -1 && client.write_fd == -1)
 			{
-				if (client.res.headers["Content-Length"][0] == '\0')
-					client.res.headers["Content-Length"] = std::to_string(client.res.body.size());
+				if (client.response.headers["Content-Length"][0] == '\0')
+					client.response.headers["Content-Length"] = std::to_string(client.response.body.size());
 				createResponse(client);
 				client.status = RESPONSE;
 			}
-			break ;
+			break;
 	}
 }
 
-void	HTTP::handlePut(Client &client)
+void HTTP::handlePut(Client &client)
 {
-	std::string		path;
-	std::string		body;
+	std::string path;
+	std::string body;
 
 	switch (client.status)
 	{
 		case BODYPARSING:
 			parseBody(client);
-			break ;
+			break;
 		case CODE:
-			if (_helper.getStatusCode(client))
+			if (getStatusCode(client))
 				client.setFileToWrite(true);
 			else
 				client.setFileToRead(true);
-			client.res.headers["Date"] = ft::getDate();
-			client.res.headers["Server"] = "webserv";
-			if (client.res.statusCode == CREATED || client.res.statusCode == NOCONTENT)
+			client.response.headers["Date"] = ft::getDate();
+			client.response.headers["Server"] = "webserv";
+			if (client.response.statusCode == CREATED || client.response.statusCode == NOCONTENT)
 			{
-				client.res.headers["Location"] = client.req.uri;
-				if (client.res.statusCode == CREATED)
-					client.res.body = "Ressource created\n";
+				client.response.headers["Location"] = client.request.uri;
+				if (client.response.statusCode == CREATED)
+					client.response.body = "Ressource created\n";
 			}
-			if (client.res.statusCode == NOTALLOWED)
-				client.res.headers["Allow"] = client.conf["methods"];
-			else if (client.res.statusCode == UNAUTHORIZED)
-				client.res.headers["WWW-Authenticate"] = "Basic";
+			if (client.response.statusCode == NOTALLOWED)
+				client.response.headers["Allow"] = client.clientConfig["methods"];
+			else if (client.response.statusCode == UNAUTHORIZED)
+				client.response.headers["WWW-Authenticate"] = "Basic";
 			client.status = BODY;
-			break ;
+			break;
 		case BODY:
 			if (client.write_fd == -1 && client.read_fd == -1)
 			{
-				client.res.headers["Content-Length"] = std::to_string(client.res.body.size());
+				client.response.headers["Content-Length"] = std::to_string(client.response.body.size());
 				createResponse(client);
 				client.status = RESPONSE;
 			}
-			break ;
+			break;
 	}
 }
 
-void	HTTP::handleConnect(Client &client)
+void HTTP::handleConnect(Client &client)
 {
 	switch (client.status)
 	{
 		case CODE:
-			_helper.getStatusCode(client);
+			getStatusCode(client);
 			client.setFileToRead(true);
-			client.res.headers["Date"] = ft::getDate();
-			client.res.headers["Server"] = "webserv";
+			client.response.headers["Date"] = ft::getDate();
+			client.response.headers["Server"] = "webserv";
 			client.status = BODY;
-			break ;
+			break;
 		case BODY:
 			if (client.read_fd == -1)
 			{
-				client.res.headers["Content-Length"] = std::to_string(client.res.body.size());
+				client.response.headers["Content-Length"] = std::to_string(client.response.body.size());
 				createResponse(client);
 				client.status = RESPONSE;
 			}
-			break ;
+			break;
 	}
 }
 
-void	HTTP::handleTrace(Client &client)
+void HTTP::handleTrace(Client &client)
 {
 	switch (client.status)
 	{
 		case CODE:
-			_helper.getStatusCode(client);
-			client.res.headers["Date"] = ft::getDate();
-			client.res.headers["Server"] = "webserv";
-			if (client.res.statusCode == OK)
+			getStatusCode(client);
+			client.response.headers["Date"] = ft::getDate();
+			client.response.headers["Server"] = "webserv";
+			if (client.response.statusCode == OK)
 			{
-				client.res.headers["Content-Type"] = "message/http";
-				client.res.body = client.req.method + " " + client.req.uri + " " + client.req.version + "\r\n";
-				for (std::map<std::string, std::string>::iterator it(client.req.headers.begin());
-					 it != client.req.headers.end(); ++it)
+				client.response.headers["Content-Type"] = "message/http";
+				client.response.body = client.request.method + " " + client.request.uri + " " + client.request.version + "\r\n";
+				for (std::map<std::string, std::string>::iterator it(client.request.headers.begin());
+					 it != client.request.headers.end(); ++it)
 				{
-					client.res.body += it->first + ": " + it->second + "\r\n";
+					client.response.body += it->first + ": " + it->second + "\r\n";
 				}
-			}
-			else
+			} else
 				client.setFileToRead(true);
 			client.status = BODY;
-			break ;
+			break;
 		case BODY:
 			if (client.read_fd == -1)
 			{
-				client.res.headers["Content-Length"] = std::to_string(client.res.body.size());
+				client.response.headers["Content-Length"] = std::to_string(client.response.body.size());
 				createResponse(client);
 				client.status = RESPONSE;
 			}
-			break ;
+			break;
 	}
 }
 
-void	HTTP::handleOptions(Client &client)
+void HTTP::handleOptions(Client &client)
 {
 	switch (client.status)
 	{
 		case CODE:
-			_helper.getStatusCode(client);
-			client.res.headers["Date"] = ft::getDate();
-			client.res.headers["Server"] = "webserv";
-			if (client.req.uri != "*")
-				client.res.headers["Allow"] = client.conf["methods"];
+			getStatusCode(client);
+			client.response.headers["Date"] = ft::getDate();
+			client.response.headers["Server"] = "webserv";
+			if (client.request.uri != "*")
+				client.response.headers["Allow"] = client.clientConfig["methods"];
 			createResponse(client);
 			client.status = RESPONSE;
-			break ;
+			break;
 	}
 }
 
-void	HTTP::handleDelete(Client &client)
+void HTTP::handleDelete(Client &client)
 {
 	switch (client.status)
 	{
 		case CODE:
 			std::cout << "here\n";
-			if (!_helper.getStatusCode(client))
+			if (!getStatusCode(client))
 				client.setFileToRead(true);
-			client.res.headers["Date"] = ft::getDate();
-			client.res.headers["Server"] = "webserv";
-			if (client.res.statusCode == OK)
+			client.response.headers["Date"] = ft::getDate();
+			client.response.headers["Server"] = "webserv";
+			if (client.response.statusCode == OK)
 			{
-				unlink(client.conf["path"].c_str());
-				client.res.body = "File deleted\n";
-			}
-			else if (client.res.statusCode == NOTALLOWED)
-				client.res.headers["Allow"] = client.conf["methods"];
-			else if (client.res.statusCode == UNAUTHORIZED)
-				client.res.headers["WWW-Authenticate"] = "Basic";
+				unlink(client.clientConfig["path"].c_str());
+				client.response.body = "File deleted\n";
+			} else if (client.response.statusCode == NOTALLOWED)
+				client.response.headers["Allow"] = client.clientConfig["methods"];
+			else if (client.response.statusCode == UNAUTHORIZED)
+				client.response.headers["WWW-Authenticate"] = "Basic";
 			client.status = BODY;
-			break ;
+			break;
 		case BODY:
 			if (client.read_fd == -1)
 			{
-				client.res.headers["Content-Length"] = std::to_string(client.res.body.size());
+				client.response.headers["Content-Length"] = std::to_string(client.response.body.size());
 				createResponse(client);
 				client.status = RESPONSE;
 			}
-			break ;
+			break;
 	}
 }
 
-void	HTTP::handleBadRequest(Client &client)
+void HTTP::handleBadRequest(Client &client)
 {
-	struct stat		file_info;
+	struct stat file_info;
 
 	switch (client.status)
 	{
 		case CODE:
-			client.res.version = "HTTP/1.1";
-			client.res.statusCode = BADREQUEST;
-			_helper.getErrorPage(client);
+			client.response.version = "HTTP/1.1";
+			client.response.statusCode = BADREQUEST;
+			getErrorPage(client);
 			fstat(client.read_fd, &file_info);
 			client.setFileToRead(true);
-			client.res.headers["Date"] = ft::getDate();
-			client.res.headers["Server"] = "webserv";
+			client.response.headers["Date"] = ft::getDate();
+			client.response.headers["Server"] = "webserv";
 			client.status = BODY;
-			break ;
+			break;
 		case BODY:
 			if (client.read_fd == -1)
 			{
-				client.res.headers["Content-Length"] = std::to_string(client.res.body.size());
+				client.response.headers["Content-Length"] = std::to_string(client.response.body.size());
 				createResponse(client);
 				client.status = RESPONSE;
 			}
-			break ;
+			break;
 	}
+}
+
+
+static const int B64index[256] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+								  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+								  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 62, 63, 62, 62, 63, 52, 53, 54, 55,
+								  56, 57, 58, 59, 60, 61, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6,
+								  7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 0,
+								  0, 0, 0, 63, 0, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+								  41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51};
+
+
+std::string HTTP::findType(Client &client)
+{
+	std::string extension;
+	size_t pos;
+
+	if (client.clientConfig["path"].find_last_of('.') != std::string::npos)
+	{
+		pos = client.clientConfig["path"].find('.');
+		extension = client.clientConfig["path"].substr(pos, client.clientConfig["path"].find('.', pos + 1) - pos);
+		if (MIMETypes.find(extension) != MIMETypes.end())
+			return (MIMETypes[extension]);
+		else
+			return (MIMETypes[".bin"]);
+	}
+	return ("");
+}
+
+void HTTP::getErrorPage(Client &client)
+{
+	std::string path;
+
+	path = client.clientConfig["error"] + "/" + client.response.statusCode.substr(0, 3) + ".html";
+	client.clientConfig["path"] = path;
+	client.read_fd = open(path.c_str(), O_RDONLY);
+}
+
+std::string HTTP::getLastModified(std::string path)
+{
+	char buf[BUFFER_SIZE + 1];
+	int ret;
+	struct tm *tm;
+	struct stat file_info;
+
+	if (lstat(path.c_str(), &file_info) == -1)
+		return ("");
+	tm = localtime(&file_info.st_mtime);
+	ret = strftime(buf, BUFFER_SIZE, "%a, %d %b %Y %T %Z", tm);
+	buf[ret] = '\0';
+	return (buf);
+}
+
+int HTTP::findLen(Client &client)
+{
+	std::string to_convert;
+	int len;
+	std::string tmp;
+
+	to_convert = client.buffer;
+	to_convert = to_convert.substr(0, to_convert.find("\r\n"));
+	while (to_convert[0] == '\n')
+		to_convert.erase(to_convert.begin());
+	if (to_convert.size() == 0)
+		len = 0;
+	else
+		len = fromHexa(to_convert.c_str());
+	len = fromHexa(to_convert.c_str());
+	tmp = client.buffer;
+	tmp = tmp.substr(tmp.find("\r\n") + 2);
+	strcpy(client.buffer, tmp.c_str());
+	return (len);
+}
+
+void HTTP::fillBody(Client &client)
+{
+	std::string tmp;
+
+	tmp = client.buffer;
+	if (tmp.size() > client.chunk.length)
+	{
+		client.request.body += tmp.substr(0, client.chunk.length);
+		tmp = tmp.substr(client.chunk.length + 1);
+		memset(client.buffer, 0, BUFFER_SIZE + 1);
+		strcpy(client.buffer, tmp.c_str());
+		client.chunk.length = 0;
+		client.chunk.isFound = false;
+	} else
+	{
+		client.request.body += tmp;
+		client.chunk.length -= tmp.size();
+		memset(client.buffer, 0, BUFFER_SIZE + 1);
+	}
+}
+
+int HTTP::fromHexa(const char *nb)
+{
+	char base[17] = "0123456789abcdef";
+	char base2[17] = "0123456789ABCDEF";
+	int result = 0;
+	int i;
+	int index;
+
+	i = 0;
+	while (nb[i])
+	{
+		int j = 0;
+		while (base[j])
+		{
+			if (nb[i] == base[j])
+			{
+				index = j;
+				break;
+			}
+			j++;
+		}
+		if (j == 16)
+		{
+			j = 0;
+			while (base2[j])
+			{
+				if (nb[i] == base2[j])
+				{
+					index = j;
+					break;
+				}
+				j++;
+			}
+		}
+		result += index * ft::pow(16, (strlen(nb) - 1) - i);
+		i++;
+	}
+	return (result);
+}
+
+std::string HTTP::decode64(const char *data)
+{
+	while (*data != ' ')
+		data++;
+	data++;
+	unsigned int len = strlen(data);
+	unsigned char *p = (unsigned char *) data;
+	int pad = len > 0 && (len % 4 || p[len - 1] == '=');
+	const size_t L = ((len + 3) / 4 - pad) * 4;
+	std::string str(L / 4 * 3 + pad, '\0');
+
+	for (size_t i = 0, j = 0; i < L; i += 4)
+	{
+		int n = B64index[p[i]] << 18 | B64index[p[i + 1]] << 12 | B64index[p[i + 2]] << 6 | B64index[p[i + 3]];
+		str[j++] = n >> 16;
+		str[j++] = n >> 8 & 0xFF;
+		str[j++] = n & 0xFF;
+	}
+	if (pad)
+	{
+		int n = B64index[p[L]] << 18 | B64index[p[L + 1]] << 12;
+		str[str.size() - 1] = n >> 16;
+
+		if (len > L + 2 && p[L + 2] != '=')
+		{
+			n |= B64index[p[L + 2]] << 6;
+			str.push_back(n >> 8 & 0xFF);
+		}
+	}
+	if (str.back() == 0)
+		str.pop_back();
+	return (str);
+}
+
+void HTTP::parseAcceptLanguage(Client &client, std::multimap<std::string, std::string> &map)
+{
+	std::string language;
+	std::string to_parse;
+	std::string q;
+
+	to_parse = client.request.headers["Accept-Language"];
+	int i = 0;
+	while (to_parse[i] != '\0')
+	{
+		language.clear();
+		q.clear();
+		while (to_parse[i] && to_parse[i] != ',' && to_parse[i] != ';')
+		{
+			language += to_parse[i];
+			++i;
+		}
+		if (to_parse[i] == ',' || to_parse[i] == '\0')
+			q = "1";
+		else if (to_parse[i] == ';')
+		{
+			i += 3;
+			while (to_parse[i] && to_parse[i] != ',')
+			{
+				q += to_parse[i];
+				++i;
+			}
+		}
+		if (to_parse[i])
+			++i;
+		std::pair<std::string, std::string> pair(q, language);
+		map.insert(pair);
+	}
+}
+
+void HTTP::parseAcceptCharset(Client &client, std::multimap<std::string, std::string> &map)
+{
+	std::string charset;
+	std::string to_parse;
+	std::string q;
+
+	to_parse = client.request.headers["Accept-Charset"];
+	int i = 0;
+	while (to_parse[i] != '\0')
+	{
+		charset.clear();
+		q.clear();
+		while (to_parse[i] && to_parse[i] != ',' && to_parse[i] != ';')
+		{
+			charset += to_parse[i];
+			++i;
+		}
+		if (to_parse[i] == ',' || to_parse[i] == '\0')
+			q = "1";
+		else if (to_parse[i] == ';')
+		{
+			i += 3;
+			while (to_parse[i] && to_parse[i] != ',')
+			{
+				q += to_parse[i];
+				++i;
+			}
+		}
+		if (to_parse[i])
+			++i;
+		std::pair<std::string, std::string> pair(q, charset);
+		map.insert(pair);
+	}
+}
+
+char **HTTP::setEnv(Client &client)
+{
+	char **env;
+	std::map<std::string, std::string> envMap;
+	size_t pos;
+
+	envMap["GATEWAY_INTERFACE"] = "CGI/1.1";
+	envMap["SERVER_PROTOCOL"] = "HTTP/1.1";
+	envMap["SERVER_SOFTWARE"] = "webserv";
+	envMap["REQUEST_URI"] = client.request.uri;
+	envMap["REQUEST_METHOD"] = client.request.method;
+	envMap["REMOTE_ADDR"] = client.ip;
+	envMap["PATH_INFO"] = client.request.uri;
+	envMap["PATH_TRANSLATED"] = client.clientConfig["path"];
+	envMap["CONTENT_LENGTH"] = std::to_string(client.request.body.size());
+
+	if (client.request.uri.find('?') != std::string::npos)
+		envMap["QUERY_STRING"] = client.request.uri.substr(client.request.uri.find('?') + 1);
+	else
+		envMap["QUERY_STRING"];
+	if (client.request.headers.find("Content-Type") != client.request.headers.end())
+		envMap["CONTENT_TYPE"] = client.request.headers["Content-Type"];
+	if (client.clientConfig.find("exec") != client.clientConfig.end())
+		envMap["SCRIPT_NAME"] = client.clientConfig["exec"];
+	else
+		envMap["SCRIPT_NAME"] = client.clientConfig["path"];
+	if (client.clientConfig["listen"].find(":") != std::string::npos)
+	{
+		envMap["SERVER_NAME"] = client.clientConfig["listen"].substr(0, client.clientConfig["listen"].find(":"));
+		envMap["SERVER_PORT"] = client.clientConfig["listen"].substr(client.clientConfig["listen"].find(":") + 1);
+	} else
+		envMap["SERVER_PORT"] = client.clientConfig["listen"];
+	if (client.request.headers.find("Authorization") != client.request.headers.end())
+	{
+		pos = client.request.headers["Authorization"].find(" ");
+		envMap["AUTH_TYPE"] = client.request.headers["Authorization"].substr(0, pos);
+		envMap["REMOTE_USER"] = client.request.headers["Authorization"].substr(pos + 1);
+		envMap["REMOTE_IDENT"] = client.request.headers["Authorization"].substr(pos + 1);
+	}
+	if (client.clientConfig.find("php") != client.clientConfig.end() && client.request.uri.find(".php") != std::string::npos)
+		envMap["REDIRECT_STATUS"] = "200";
+
+	std::map<std::string, std::string>::iterator b = client.request.headers.begin();
+	while (b != client.request.headers.end())
+	{
+		envMap["HTTP_" + b->first] = b->second;
+		++b;
+	}
+	env = (char **) malloc(sizeof(char *) * (envMap.size() + 1));
+	std::map<std::string, std::string>::iterator it = envMap.begin();
+	int i = 0;
+	while (it != envMap.end())
+	{
+		env[i] = strdup((it->first + "=" + it->second).c_str());
+		++i;
+		++it;
+	}
+	env[i] = NULL;
+	return (env);
+}
+
+void HTTP::assignMIME()
+{
+	MIMETypes[".txt"] = "text/plain";
+	MIMETypes[".bin"] = "application/octet-stream";
+	MIMETypes[".jpeg"] = "image/jpeg";
+	MIMETypes[".jpg"] = "image/jpeg";
+	MIMETypes[".html"] = "text/html";
+	MIMETypes[".htm"] = "text/html";
+	MIMETypes[".png"] = "image/png";
+	MIMETypes[".bmp"] = "image/bmp";
+	MIMETypes[".pdf"] = "application/pdf";
+	MIMETypes[".tar"] = "application/x-tar";
+	MIMETypes[".json"] = "application/json";
+	MIMETypes[".css"] = "text/css";
+	MIMETypes[".js"] = "application/javascript";
+	MIMETypes[".mp3"] = "audio/mpeg";
+	MIMETypes[".avi"] = "video/x-msvideo";
+}
+
+int HTTP::getStatusCode(Client &client)
+{
+	typedef int    (HTTP::*ptr)(Client &client);
+	std::map<std::string, ptr> map;
+	std::string credential;
+	int ret;
+	map["GET"] = &HTTP::GETStatus;
+	map["HEAD"] = &HTTP::GETStatus;
+	map["PUT"] = &HTTP::PUTStatus;
+	map["POST"] = &HTTP::POSTStatus;
+	map["CONNECT"] = &HTTP::CONNECTStatus;
+	map["TRACE"] = &HTTP::TRACEStatus;
+	map["OPTIONS"] = &HTTP::OPTIONSStatus;
+	map["DELETE"] = &HTTP::DELETEStatus;
+
+	if (client.request.method != "CONNECT"
+		&& client.request.method != "TRACE"
+		&& client.request.method != "OPTIONS")
+	{
+		client.response.version = "HTTP/1.1";
+		client.response.statusCode = OK;
+		if (client.clientConfig["methods"].find(client.request.method) == std::string::npos)
+			client.response.statusCode = NOTALLOWED;
+		else if (client.clientConfig.find("auth") != client.clientConfig.end())
+		{
+			client.response.statusCode = UNAUTHORIZED;
+			if (client.request.headers.find("Authorization") != client.request.headers.end())
+			{
+				credential = decode64(client.request.headers["Authorization"].c_str());
+				if (credential == client.clientConfig["auth"])
+					client.response.statusCode = OK;
+			}
+		}
+	}
+
+	ret = (this->*map[client.request.method])(client);
+
+	if (ret == 0)
+		getErrorPage(client);
+	return (ret);
+}
+
+int HTTP::GETStatus(Client &client)
+{
+	struct stat info = {};
+
+	if (client.response.statusCode == OK)
+	{
+		errno = 0;
+		client.read_fd = open(client.clientConfig["path"].c_str(), O_RDONLY);
+		if (client.read_fd == -1 && errno == ENOENT)
+			client.response.statusCode = NOTFOUND;
+		else if (client.read_fd == -1)
+			client.response.statusCode = INTERNALERROR;
+		else
+		{
+			fstat(client.read_fd, &info);
+			if (!S_ISDIR(info.st_mode)
+				|| (S_ISDIR(info.st_mode) && client.clientConfig["listing"] == "on"))
+				return (1);
+			else
+				client.response.statusCode = NOTFOUND;
+		}
+	}
+	return (0);
+}
+
+int HTTP::POSTStatus(Client &client)
+{
+	std::string credential;
+	int fd;
+	struct stat info;
+
+	if (client.response.statusCode == OK && client.clientConfig.find("max_body") != client.clientConfig.end()
+		&& client.request.body.size() > (unsigned long) atoi(client.clientConfig["max_body"].c_str()))
+		client.response.statusCode = REQTOOLARGE;
+	if (client.response.statusCode == OK)
+	{
+		if (client.clientConfig.find("CGI") != client.clientConfig.end()
+			&& client.request.uri.find(client.clientConfig["CGI"]) != std::string::npos)
+		{
+			if (client.clientConfig["exec"][0])
+				client.read_fd = open(client.clientConfig["exec"].c_str(), O_RDONLY);
+			else
+				client.read_fd = open(client.clientConfig["path"].c_str(), O_RDONLY);
+			fstat(client.read_fd, &info);
+			if (client.read_fd == -1 || S_ISDIR(info.st_mode))
+				client.response.statusCode = INTERNALERROR;
+			else
+				return (1);
+		} else
+		{
+			errno = 0;
+			fd = open(client.clientConfig["path"].c_str(), O_RDONLY);
+			if (fd == -1 && errno == ENOENT)
+				client.response.statusCode = CREATED;
+			else if (fd != -1)
+				client.response.statusCode = OK;
+			close(fd);
+			client.write_fd = open(client.clientConfig["path"].c_str(), O_WRONLY | O_APPEND | O_CREAT, 0666);
+			if (client.write_fd == -1)
+				client.response.statusCode = INTERNALERROR;
+			else
+				return (1);
+		}
+	}
+	return (0);
+}
+
+int HTTP::PUTStatus(Client &client)
+{
+	int fd;
+	struct stat info;
+	int save_err;
+
+
+	if (client.response.statusCode == OK && client.clientConfig.find("max_body") != client.clientConfig.end()
+		&& client.request.body.size() > (unsigned long) atoi(client.clientConfig["max_body"].c_str()))
+		client.response.statusCode = REQTOOLARGE;
+	else if (client.response.statusCode == OK)
+	{
+		errno = 0;
+		fd = open(client.clientConfig["path"].c_str(), O_RDONLY);
+		save_err = errno;
+		fstat(fd, &info);
+		if (S_ISDIR(info.st_mode))
+			client.response.statusCode = NOTFOUND;
+		else
+		{
+			if (fd == -1 && save_err == ENOENT)
+				client.response.statusCode = CREATED;
+			else if (fd == -1)
+			{
+				client.response.statusCode = INTERNALERROR;
+				return (0);
+			} else
+			{
+				client.response.statusCode = NOCONTENT;
+				if (close(fd) == -1)
+				{
+					client.response.statusCode = INTERNALERROR;
+					return (0);
+				}
+			}
+			client.write_fd = open(client.clientConfig["path"].c_str(), O_WRONLY | O_CREAT, 0666);
+			if (client.write_fd == -1)
+			{
+				client.response.statusCode = INTERNALERROR;
+				return (0);
+			}
+			return (1);
+		}
+	}
+	return (0);
+}
+
+int HTTP::CONNECTStatus(Client &client)
+{
+	client.response.version = "HTTP/1.1";
+	client.response.statusCode = NOTIMPLEMENTED;
+	return (0);
+}
+
+int HTTP::TRACEStatus(Client &client)
+{
+	client.response.version = "HTTP/1.1";
+	if (client.clientConfig["methods"].find(client.request.method) == std::string::npos)
+	{
+		client.response.statusCode = NOTALLOWED;
+		return (0);
+	} else
+	{
+		client.response.statusCode = OK;
+		return (1);
+	}
+}
+
+int HTTP::OPTIONSStatus(Client &client)
+{
+	client.response.version = "HTTP/1.1";
+	client.response.statusCode = NOCONTENT;
+	return (1);
+}
+
+int HTTP::DELETEStatus(Client &client)
+{
+	int fd;
+	struct stat info;
+	int save_err;
+
+	if (client.response.statusCode == OK)
+	{
+		errno = 0;
+		fd = open(client.clientConfig["path"].c_str(), O_RDONLY);
+		save_err = errno;
+		fstat(fd, &info);
+		if ((fd == -1 && save_err == ENOENT) || S_ISDIR(info.st_mode))
+			client.response.statusCode = NOTFOUND;
+		else if (fd == -1)
+			client.response.statusCode = INTERNALERROR;
+		else
+			return (1);
+	}
+	return (0);
 }

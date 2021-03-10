@@ -5,7 +5,8 @@
 #include <map>
 #include <string>
 #include <sys/time.h>
-
+#include <iostream>
+#include <iomanip>
 #define OK 				"200 OK"
 #define CREATED			"201 Created"
 #define NOCONTENT		"204 No Content"
@@ -17,19 +18,32 @@
 #define UNAVAILABLE		"503 Service Unavailable"
 #define NOTIMPLEMENTED	"501 Not Implemented"
 #define INTERNALERROR	"500 Internal Server Error"
-
 #define BUFFER_SIZE 500
+
+# define GREY			"\x1b[30m"
+# define RED			"\x1b[41m"
+# define GREEN			"\x1b[32m"
+# define YELLOW		"\x1b[33m"
+# define BLUE			"\x1b[34m"
+# define PURPLE		"\x1b[35m"
+# define CYAN			"\x1b[36m"
+# define WHITE			"\x1b[37m"
+# define END			"\x1b[0m"
+# define UNDER			"\x1b[4m"
+
+typedef std::map<std::string, std::string> element;
+typedef std::map<std::string, element> Config;
 
 struct Request
 {
-	bool								isValid;
-	std::string							method;
-	std::string							uri;
-	std::string							version;
-	std::map<std::string, std::string> 	headers;
-	std::string							body;
+	bool isValid;
+	std::string method;
+	std::string uri;
+	std::string version;
+	std::map<std::string, std::string> headers;
+	std::string body;
 
-	void	clear()
+	void clear()
 	{
 		method.clear();
 		uri.clear();
@@ -41,12 +55,12 @@ struct Request
 
 struct Response
 {
-	std::string							version;
-	std::string							statusCode;
-	std::map<std::string, std::string> 	headers;
-	std::string							body;
+	std::string version;
+	std::string statusCode;
+	std::map<std::string, std::string> headers;
+	std::string body;
 
-	void	clear()
+	void clear()
 	{
 		version.clear();
 		statusCode.clear();
@@ -55,9 +69,15 @@ struct Response
 	}
 };
 
+struct w_chunk
+{
+	unsigned int length;
+	bool isDone;
+	bool isFound;
+};
+
 enum status
 {
-	PARSING,
 	BODYPARSING,
 	CODE,
 	HEADERS,
@@ -82,4 +102,12 @@ namespace ft
 
 	void freeAll(char **args, char **env);
 }
+
+namespace utils
+{
+	void exitWithLog();
+
+	void showMessage(std::string text);
+}
+
 #endif

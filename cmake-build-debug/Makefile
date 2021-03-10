@@ -68,10 +68,10 @@ RM = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/qsymond/CLionProjects/webserv
+CMAKE_SOURCE_DIR = /Users/qsymond/Desktop/webserv
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/qsymond/CLionProjects/webserv/cmake-build-debug
+CMAKE_BINARY_DIR = /Users/qsymond/Desktop/webserv/cmake-build-debug
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -100,9 +100,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/qsymond/CLionProjects/webserv/cmake-build-debug/CMakeFiles /Users/qsymond/CLionProjects/webserv/cmake-build-debug/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/qsymond/Desktop/webserv/cmake-build-debug/CMakeFiles /Users/qsymond/Desktop/webserv/cmake-build-debug/CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/qsymond/CLionProjects/webserv/cmake-build-debug/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/qsymond/Desktop/webserv/cmake-build-debug/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -143,32 +143,167 @@ webserv/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/build
 .PHONY : webserv/fast
 
-main.o: main.cpp.o
+srcs/Client.o: srcs/Client.cpp.o
 
-.PHONY : main.o
+.PHONY : srcs/Client.o
 
 # target to build an object file
-main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/main.cpp.o
-.PHONY : main.cpp.o
+srcs/Client.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Client.cpp.o
+.PHONY : srcs/Client.cpp.o
 
-main.i: main.cpp.i
+srcs/Client.i: srcs/Client.cpp.i
 
-.PHONY : main.i
+.PHONY : srcs/Client.i
 
 # target to preprocess a source file
-main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/main.cpp.i
-.PHONY : main.cpp.i
+srcs/Client.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Client.cpp.i
+.PHONY : srcs/Client.cpp.i
 
-main.s: main.cpp.s
+srcs/Client.s: srcs/Client.cpp.s
 
-.PHONY : main.s
+.PHONY : srcs/Client.s
 
 # target to generate assembly for a file
-main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/main.cpp.s
-.PHONY : main.cpp.s
+srcs/Client.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Client.cpp.s
+.PHONY : srcs/Client.cpp.s
+
+srcs/HTTP.o: srcs/HTTP.cpp.o
+
+.PHONY : srcs/HTTP.o
+
+# target to build an object file
+srcs/HTTP.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/HTTP.cpp.o
+.PHONY : srcs/HTTP.cpp.o
+
+srcs/HTTP.i: srcs/HTTP.cpp.i
+
+.PHONY : srcs/HTTP.i
+
+# target to preprocess a source file
+srcs/HTTP.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/HTTP.cpp.i
+.PHONY : srcs/HTTP.cpp.i
+
+srcs/HTTP.s: srcs/HTTP.cpp.s
+
+.PHONY : srcs/HTTP.s
+
+# target to generate assembly for a file
+srcs/HTTP.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/HTTP.cpp.s
+.PHONY : srcs/HTTP.cpp.s
+
+srcs/Server.o: srcs/Server.cpp.o
+
+.PHONY : srcs/Server.o
+
+# target to build an object file
+srcs/Server.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Server.cpp.o
+.PHONY : srcs/Server.cpp.o
+
+srcs/Server.i: srcs/Server.cpp.i
+
+.PHONY : srcs/Server.i
+
+# target to preprocess a source file
+srcs/Server.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Server.cpp.i
+.PHONY : srcs/Server.cpp.i
+
+srcs/Server.s: srcs/Server.cpp.s
+
+.PHONY : srcs/Server.s
+
+# target to generate assembly for a file
+srcs/Server.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Server.cpp.s
+.PHONY : srcs/Server.cpp.s
+
+srcs/Utils.o: srcs/Utils.cpp.o
+
+.PHONY : srcs/Utils.o
+
+# target to build an object file
+srcs/Utils.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Utils.cpp.o
+.PHONY : srcs/Utils.cpp.o
+
+srcs/Utils.i: srcs/Utils.cpp.i
+
+.PHONY : srcs/Utils.i
+
+# target to preprocess a source file
+srcs/Utils.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Utils.cpp.i
+.PHONY : srcs/Utils.cpp.i
+
+srcs/Utils.s: srcs/Utils.cpp.s
+
+.PHONY : srcs/Utils.s
+
+# target to generate assembly for a file
+srcs/Utils.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Utils.cpp.s
+.PHONY : srcs/Utils.cpp.s
+
+srcs/Webserv.o: srcs/Webserv.cpp.o
+
+.PHONY : srcs/Webserv.o
+
+# target to build an object file
+srcs/Webserv.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Webserv.cpp.o
+.PHONY : srcs/Webserv.cpp.o
+
+srcs/Webserv.i: srcs/Webserv.cpp.i
+
+.PHONY : srcs/Webserv.i
+
+# target to preprocess a source file
+srcs/Webserv.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Webserv.cpp.i
+.PHONY : srcs/Webserv.cpp.i
+
+srcs/Webserv.s: srcs/Webserv.cpp.s
+
+.PHONY : srcs/Webserv.s
+
+# target to generate assembly for a file
+srcs/Webserv.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Webserv.cpp.s
+.PHONY : srcs/Webserv.cpp.s
+
+srcs/main.o: srcs/main.cpp.o
+
+.PHONY : srcs/main.o
+
+# target to build an object file
+srcs/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/main.cpp.o
+.PHONY : srcs/main.cpp.o
+
+srcs/main.i: srcs/main.cpp.i
+
+.PHONY : srcs/main.i
+
+# target to preprocess a source file
+srcs/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/main.cpp.i
+.PHONY : srcs/main.cpp.i
+
+srcs/main.s: srcs/main.cpp.s
+
+.PHONY : srcs/main.s
+
+# target to generate assembly for a file
+srcs/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/main.cpp.s
+.PHONY : srcs/main.cpp.s
 
 # Help Target
 help:
@@ -179,9 +314,24 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... webserv"
-	@echo "... main.o"
-	@echo "... main.i"
-	@echo "... main.s"
+	@echo "... srcs/Client.o"
+	@echo "... srcs/Client.i"
+	@echo "... srcs/Client.s"
+	@echo "... srcs/HTTP.o"
+	@echo "... srcs/HTTP.i"
+	@echo "... srcs/HTTP.s"
+	@echo "... srcs/Server.o"
+	@echo "... srcs/Server.i"
+	@echo "... srcs/Server.s"
+	@echo "... srcs/Utils.o"
+	@echo "... srcs/Utils.i"
+	@echo "... srcs/Utils.s"
+	@echo "... srcs/Webserv.o"
+	@echo "... srcs/Webserv.i"
+	@echo "... srcs/Webserv.s"
+	@echo "... srcs/main.o"
+	@echo "... srcs/main.i"
+	@echo "... srcs/main.s"
 .PHONY : help
 
 

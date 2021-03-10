@@ -4,7 +4,12 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/Users/qsymond/CLionProjects/webserv/main.cpp" "/Users/qsymond/CLionProjects/webserv/cmake-build-debug/CMakeFiles/webserv.dir/main.cpp.o"
+  "/Users/qsymond/Desktop/webserv/srcs/Client.cpp" "/Users/qsymond/Desktop/webserv/cmake-build-debug/CMakeFiles/webserv.dir/srcs/Client.cpp.o"
+  "/Users/qsymond/Desktop/webserv/srcs/HTTP.cpp" "/Users/qsymond/Desktop/webserv/cmake-build-debug/CMakeFiles/webserv.dir/srcs/HTTP.cpp.o"
+  "/Users/qsymond/Desktop/webserv/srcs/Server.cpp" "/Users/qsymond/Desktop/webserv/cmake-build-debug/CMakeFiles/webserv.dir/srcs/Server.cpp.o"
+  "/Users/qsymond/Desktop/webserv/srcs/Utils.cpp" "/Users/qsymond/Desktop/webserv/cmake-build-debug/CMakeFiles/webserv.dir/srcs/Utils.cpp.o"
+  "/Users/qsymond/Desktop/webserv/srcs/Webserv.cpp" "/Users/qsymond/Desktop/webserv/cmake-build-debug/CMakeFiles/webserv.dir/srcs/Webserv.cpp.o"
+  "/Users/qsymond/Desktop/webserv/srcs/main.cpp" "/Users/qsymond/Desktop/webserv/cmake-build-debug/CMakeFiles/webserv.dir/srcs/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "AppleClang")
 
