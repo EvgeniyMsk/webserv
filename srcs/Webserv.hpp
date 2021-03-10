@@ -1,13 +1,6 @@
-#ifndef CONFIG_HPP
-#define CONFIG_HPP
+#ifndef WEBSERV_HPP
+#define WEBSERV_HPP
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <cstdlib>
-#include <string>
-#include <map>
-#include <vector>
-#include <iostream>
 #include "Server.hpp"
 #include "Utils.hpp"
 #define maxFD 1023
@@ -39,9 +32,9 @@ public:
 
 	void run();
 
-	int getMaxFd(std::vector<Server> &servs);
+	static int getMaxFd(std::vector<Server> &servs);
 
-	int getOpenFd(std::vector<Server> &servs);
+	static int getOpenFd(std::vector<Server> &servs);
 
 	class InvalidConfigFileException : public std::exception
 	{

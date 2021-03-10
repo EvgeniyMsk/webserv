@@ -49,7 +49,7 @@ private:
 public:
 	Client(int clientSocket, fd_set *new_read_set, fd_set *new_write_set, struct sockaddr_in info);
 
-	~Client();
+	virtual ~Client();
 
 	void setReadState(bool state);
 

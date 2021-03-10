@@ -1,12 +1,24 @@
 #ifndef UTILS_HPP
 # define UTILS_HPP
 
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <string>
-#include <map>
-#include <string>
-#include <sys/time.h>
 #include <iostream>
 #include <iomanip>
+#include <cstdlib>
+
+#include <map>
+#include <queue>
+#include <vector>
+
+#include <sys/time.h>
+#include <sys/stat.h>
+
+
+#include <dirent.h>
+
 #define OK 				"200 OK"
 #define CREATED			"201 Created"
 #define NOCONTENT		"204 No Content"
@@ -21,11 +33,11 @@
 #define BUFFER_SIZE 500
 
 # define GREY			"\x1b[30m"
-# define RED			"\x1b[41m"
+# define RED			"\x1b[31m"
 # define GREEN			"\x1b[32m"
-# define YELLOW		"\x1b[33m"
+# define YELLOW			"\x1b[33m"
 # define BLUE			"\x1b[34m"
-# define PURPLE		"\x1b[35m"
+# define PURPLE			"\x1b[35m"
 # define CYAN			"\x1b[36m"
 # define WHITE			"\x1b[37m"
 # define END			"\x1b[0m"

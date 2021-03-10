@@ -114,7 +114,7 @@ void Server::init(fd_set *readSet, fd_set *writeSet, fd_set *rSet, fd_set *wSet)
 void Server::refuseConnection()
 {
 	int fd = -1;
-	struct sockaddr_in info;
+	struct sockaddr_in info = {};
 	socklen_t len;
 
 	errno = 0;
@@ -152,7 +152,7 @@ int Server::readRequest(std::vector<Client *>::iterator it)
 {
 	int bytes;
 	int ret;
-	Client *client = NULL;
+	Client *client = nullptr;
 	std::string log;
 
 	client = *it;
@@ -162,7 +162,7 @@ int Server::readRequest(std::vector<Client *>::iterator it)
 	if (ret > 0)
 	{
 		client->buffer[bytes] = '\0';
-		if (strstr(client->buffer, "\r\n\r\n") != NULL
+		if (strstr(client->buffer, "\r\n\r\n") != nullptr
 			&& client->status != BODYPARSING)
 		{
 			log = "REQUEST:\n";
@@ -194,7 +194,7 @@ int Server::writeResponse(std::vector<Client *>::iterator it)
 	unsigned long bytes;
 	std::string tmp;
 	std::string log;
-	Client *client = NULL;
+	Client *client = nullptr;
 
 	client = *it;
 	switch (client->status)
@@ -278,7 +278,7 @@ int Server::getTimeDiff(std::string start)
 	return (result);
 }
 
-Server::ServerException::ServerException(void)
+Server::ServerException::ServerException()
 {
 	this->error = "Undefined Server Exception";
 }
@@ -288,10 +288,10 @@ Server::ServerException::ServerException(std::string function, std::string error
 	this->error = function + ": " + error;
 }
 
-Server::ServerException::~ServerException(void) throw()
+Server::ServerException::~ServerException() throw()
 {}
 
-const char *Server::ServerException::what(void) const throw()
+const char *Server::ServerException::what() const throw()
 {
 	return (this->error.c_str());
 }

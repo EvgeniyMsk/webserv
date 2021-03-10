@@ -33,7 +33,7 @@ void Webserv::init()
 	int i = 0;
 	for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
 	{
-		std::cout << RED GREY UNDER << "Конфиг для " << i + 1 << "-го cервера:" << END << std::endl;
+		std::cout << RED UNDER << "Конфиг для " << i + 1 << "-го cервера:" << END << std::endl;
 		for (std::vector<config>::iterator it1 = it->config.begin(); it1 != it->config.end(); it1++)
 		{
 			for (std::map<std::string, std::map<std::string, std::string> >::iterator it2 = it1->begin(); it2 != it1->end(); it2++)

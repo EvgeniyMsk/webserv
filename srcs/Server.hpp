@@ -1,7 +1,6 @@
-#ifndef Server_HPP
-#define Server_HPP
+#ifndef SERVER_HPP
+#define SERVER_HPP
 
-#include <queue>
 #include "HTTP.hpp"
 
 #define TIMEOUT 10
@@ -29,7 +28,7 @@ public:
 	std::vector<Config> config;
 	Server();
 
-	~Server();
+	virtual ~Server();
 
 	int getMaxFd();
 
@@ -66,7 +65,7 @@ public:
 	};
 
 private:
-	int getTimeDiff(std::string start);
+	static int getTimeDiff(std::string start);
 
 };
 

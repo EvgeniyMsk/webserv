@@ -1,11 +1,6 @@
 #ifndef HTTP_HPP
 #define HTTP_HPP
 
-#include <vector>
-#include <dirent.h>
-#include <sys/stat.h>
-
-#include "Utils.hpp"
 #include "Client.hpp"
 
 class Client;
@@ -24,7 +19,7 @@ public:
 
 	void dispatcher(Client &client);
 
-	void createResponse(Client &client);
+	static void createResponse(Client &client);
 
 private:
 	void handleGet(Client &client);
@@ -45,43 +40,43 @@ private:
 
 	void handleBadRequest(Client &client);
 
-	void getConf(Client &client, Request &req, std::vector<Config> &conf);
+	static void getConf(Client &client, Request &req, std::vector<Config> &conf);
 
 	void negotiate(Client &client);
 
-	void createListing(Client &client);
+	static void createListing(Client &client);
 
-	bool checkSyntax(const Request &request);
+	static bool checkSyntax(const Request &request);
 
-	bool parseHeaders(std::string &buf, Request &req);
+	static bool parseHeaders(std::string &buf, Request &req);
 
-	void getBody(Client &client);
+	static void getBody(Client &client);
 
 	void dechunkBody(Client &client);
 
 	void execCGI(Client &client);
 
-	void parseCGIResult(Client &client);
+	static void parseCGIResult(Client &client);
 
-	std::string getLastModified(std::string path);
+	static std::string getLastModified(const std::string& path);
 
 	std::string findType(Client &client);
 
-	void getErrorPage(Client &client);
+	static void getErrorPage(Client &client);
 
 	int findLen(Client &client);
 
-	void fillBody(Client &client);
+	static void fillBody(Client &client);
 
-	int fromHexa(const char *nb);
+	static int fromHexa(const char *nb);
 
-	char **setEnv(Client &client);
+	static char **setEnv(Client &client);
 
-	std::string decode64(const char *data);
+	static std::string decode64(const char *data);
 
-	void parseAcceptLanguage(Client &client, std::multimap<std::string, std::string> &map);
+	static void parseAcceptLanguage(Client &client, std::multimap<std::string, std::string> &map);
 
-	void parseAcceptCharset(Client &client, std::multimap<std::string, std::string> &map);
+	static void parseAcceptCharset(Client &client, std::multimap<std::string, std::string> &map);
 
 	void assignMIME();
 

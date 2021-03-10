@@ -57,7 +57,7 @@ bool HTTP::parseHeaders(std::string &buf, Request &req)
 	while (!buf.empty())
 	{
 		ft::get_next_line(buf, line);
-		if (line.size() < 1 || line[0] == '\n' || line[0] == '\r')
+		if (line.empty() || line[0] == '\n' || line[0] == '\r')
 			break;
 		if (line.find(':') != std::string::npos)
 		{
@@ -183,17 +183,17 @@ void HTTP::getConf(Client &client, Request &req, std::vector<Config> &conf)
 		}
 		tmp = tmp.substr(0, tmp.find_last_of('/'));
 	} while (tmp != "");
-	if (elmt.size() == 0)
+	if (elmt.empty())
 		if (to_parse.find("server|location /|") != to_parse.end())
 			elmt = to_parse["server|location /|"];
-	if (elmt.size() > 0)
+	if (!elmt.empty())
 	{
 		client.clientConfig = elmt;
-		client.clientConfig["path"] = req.uri.substr(0, req.uri.find("?"));
+		client.clientConfig["path"] = req.uri.substr(0, req.uri.find('?'));
 		if (elmt.find("root") != elmt.end())
 			client.clientConfig["path"].replace(0, tmp.size(), elmt["root"]);
 	}
-	for (std::map<std::string, std::string>::iterator it(to_parse["server|"].begin()); it != to_parse["server|"].end(); ++it)
+	for (std::map<std::string, std::string>::iterator it = to_parse["server|"].begin(); it != to_parse["server|"].end(); ++it)
 	{
 		if (client.clientConfig.find(it->first) == client.clientConfig.end())
 			client.clientConfig[it->first] = it->second;
@@ -308,7 +308,6 @@ void HTTP::createListing(Client &client)
 	client.response.body += "</body>\n</html>\n";
 }
 
-//TO COMPLETE
 bool HTTP::checkSyntax(const Request &req)
 {
 	if (req.method.size() == 0 || req.uri.size() == 0
@@ -330,8 +329,8 @@ bool HTTP::checkSyntax(const Request &req)
 
 void HTTP::execCGI(Client &client)
 {
-	char **args = NULL;
-	char **env = NULL;
+	char **args = nullptr;
+	char **env = nullptr;
 	std::string path;
 	int ret;
 	int tubes[2];
@@ -516,7 +515,7 @@ void HTTP::handleGet(Client &client)
 
 void HTTP::handleHead(Client &client)
 {
-	struct stat file_info;
+	struct stat file_info = {};
 
 	switch (client.status)
 	{
@@ -749,7 +748,7 @@ void HTTP::handleDelete(Client &client)
 
 void HTTP::handleBadRequest(Client &client)
 {
-	struct stat file_info;
+	struct stat file_info = {};
 
 	switch (client.status)
 	{
@@ -810,12 +809,12 @@ void HTTP::getErrorPage(Client &client)
 	client.read_fd = open(path.c_str(), O_RDONLY);
 }
 
-std::string HTTP::getLastModified(std::string path)
+std::string HTTP::getLastModified(const std::string& path)
 {
 	char buf[BUFFER_SIZE + 1];
 	int ret;
 	struct tm *tm;
-	struct stat file_info;
+	struct stat file_info = {};
 
 	if (lstat(path.c_str(), &file_info) == -1)
 		return ("");
@@ -835,7 +834,7 @@ int HTTP::findLen(Client &client)
 	to_convert = to_convert.substr(0, to_convert.find("\r\n"));
 	while (to_convert[0] == '\n')
 		to_convert.erase(to_convert.begin());
-	if (to_convert.size() == 0)
+	if (to_convert.empty())
 		len = 0;
 	else
 		len = fromHexa(to_convert.c_str());
@@ -901,7 +900,7 @@ int HTTP::fromHexa(const char *nb)
 				j++;
 			}
 		}
-		result += index * ft::pow(16, (strlen(nb) - 1) - i);
+		result += index * ft::pow(16, (int)(strlen(nb) - 1) - i);
 		i++;
 	}
 	return (result);
@@ -1037,15 +1036,15 @@ char **HTTP::setEnv(Client &client)
 		envMap["SCRIPT_NAME"] = client.clientConfig["exec"];
 	else
 		envMap["SCRIPT_NAME"] = client.clientConfig["path"];
-	if (client.clientConfig["listen"].find(":") != std::string::npos)
+	if (client.clientConfig["listen"].find(':') != std::string::npos)
 	{
-		envMap["SERVER_NAME"] = client.clientConfig["listen"].substr(0, client.clientConfig["listen"].find(":"));
-		envMap["SERVER_PORT"] = client.clientConfig["listen"].substr(client.clientConfig["listen"].find(":") + 1);
+		envMap["SERVER_NAME"] = client.clientConfig["listen"].substr(0, client.clientConfig["listen"].find(':'));
+		envMap["SERVER_PORT"] = client.clientConfig["listen"].substr(client.clientConfig["listen"].find(':') + 1);
 	} else
 		envMap["SERVER_PORT"] = client.clientConfig["listen"];
 	if (client.request.headers.find("Authorization") != client.request.headers.end())
 	{
-		pos = client.request.headers["Authorization"].find(" ");
+		pos = client.request.headers["Authorization"].find(' ');
 		envMap["AUTH_TYPE"] = client.request.headers["Authorization"].substr(0, pos);
 		envMap["REMOTE_USER"] = client.request.headers["Authorization"].substr(pos + 1);
 		envMap["REMOTE_IDENT"] = client.request.headers["Authorization"].substr(pos + 1);
@@ -1094,17 +1093,17 @@ void HTTP::assignMIME()
 int HTTP::getStatusCode(Client &client)
 {
 	typedef int    (HTTP::*ptr)(Client &client);
-	std::map<std::string, ptr> map;
+	std::map<std::string, ptr> function;
 	std::string credential;
-	int ret;
-	map["GET"] = &HTTP::GETStatus;
-	map["HEAD"] = &HTTP::GETStatus;
-	map["PUT"] = &HTTP::PUTStatus;
-	map["POST"] = &HTTP::POSTStatus;
-	map["CONNECT"] = &HTTP::CONNECTStatus;
-	map["TRACE"] = &HTTP::TRACEStatus;
-	map["OPTIONS"] = &HTTP::OPTIONSStatus;
-	map["DELETE"] = &HTTP::DELETEStatus;
+	int result;
+	function["GET"] = &HTTP::GETStatus;
+	function["HEAD"] = &HTTP::GETStatus;
+	function["PUT"] = &HTTP::PUTStatus;
+	function["POST"] = &HTTP::POSTStatus;
+	function["CONNECT"] = &HTTP::CONNECTStatus;
+	function["TRACE"] = &HTTP::TRACEStatus;
+	function["OPTIONS"] = &HTTP::OPTIONSStatus;
+	function["DELETE"] = &HTTP::DELETEStatus;
 
 	if (client.request.method != "CONNECT"
 		&& client.request.method != "TRACE"
@@ -1126,11 +1125,11 @@ int HTTP::getStatusCode(Client &client)
 		}
 	}
 
-	ret = (this->*map[client.request.method])(client);
+	result = (this->*function[client.request.method])(client);
 
-	if (ret == 0)
+	if (result == 0)
 		getErrorPage(client);
-	return (ret);
+	return (result);
 }
 
 int HTTP::GETStatus(Client &client)
@@ -1162,7 +1161,7 @@ int HTTP::POSTStatus(Client &client)
 {
 	std::string credential;
 	int fd;
-	struct stat info;
+	struct stat info = {};
 
 	if (client.response.statusCode == OK && client.clientConfig.find("max_body") != client.clientConfig.end()
 		&& client.request.body.size() > (unsigned long) atoi(client.clientConfig["max_body"].c_str()))
@@ -1203,7 +1202,7 @@ int HTTP::POSTStatus(Client &client)
 int HTTP::PUTStatus(Client &client)
 {
 	int fd;
-	struct stat info;
+	struct stat info = {};
 	int save_err;
 
 

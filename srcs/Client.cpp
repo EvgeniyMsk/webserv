@@ -2,7 +2,7 @@
 
 
 Client::Client(int clientSocket, fd_set *new_read_set, fd_set *new_write_set, struct sockaddr_in info)
-		: fd(clientSocket), read_fd(-1), write_fd(-1), status(STANDBY), cgi_pid(-1), tmp_fd(-1), read_set(new_read_set), write_set(new_write_set)
+		: fd(clientSocket), read_fd(-1), write_fd(-1), status(STANDBY), cgi_pid(-1), tmp_fd(-1), read_set(new_read_set), write_set(new_write_set), chunk()
 {
 	ip = inet_ntoa(info.sin_addr);
 	port = htons(info.sin_port);
@@ -21,7 +21,7 @@ Client::Client(int clientSocket, fd_set *new_read_set, fd_set *new_write_set, st
 Client::~Client()
 {
 	free(buffer);
-	buffer = NULL;
+	buffer = nullptr;
 	if (fd != -1)
 	{
 		close(fd);
@@ -86,17 +86,17 @@ void Client::setFileToWrite(bool state)
 
 void Client::readFile()
 {
-	char buffer[BUFFER_SIZE + 1];
-	int result = 0;
-	int status = 0;
+	char tmpBuffer[BUFFER_SIZE + 1];
+	int result;
+	int cgiStatus = 0;
 
 	if (cgi_pid != -1)
 	{
-		if (waitpid((pid_t) cgi_pid, (int *) &status, (int) WNOHANG) == 0)
+		if (waitpid((pid_t) cgi_pid, (int *) &cgiStatus, (int) WNOHANG) == 0)
 			return;
 		else
 		{
-			if (WEXITSTATUS(status) == 1)
+			if (WEXITSTATUS(cgiStatus) == 1)
 			{
 				close(tmp_fd);
 				tmp_fd = -1;
@@ -110,10 +110,10 @@ void Client::readFile()
 			}
 		}
 	}
-	result = read(read_fd, buffer, BUFFER_SIZE);
+	result = read(read_fd, tmpBuffer, BUFFER_SIZE);
 	if (result >= 0)
-		buffer[result] = '\0';
-	std::string tmp(buffer, result);
+		tmpBuffer[result] = '\0';
+	std::string tmp(tmpBuffer, result);
 	response.body += tmp;
 	if (result == 0)
 	{
@@ -126,8 +126,7 @@ void Client::readFile()
 
 void Client::writeFile()
 {
-	int result = 0;
-
+	int result;
 	result = write(write_fd, request.body.c_str(), request.body.size());
 	if (cgi_pid != -1)
 		utils::showMessage("sent " + std::to_string(result) + " bytes to CGI stdin");
