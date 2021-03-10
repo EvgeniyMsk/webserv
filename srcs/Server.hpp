@@ -3,9 +3,6 @@
 
 #include "HTTP.hpp"
 
-#define TIMEOUT 10
-#define RETRY	"25"
-
 class Server
 {
 	friend class Webserv;

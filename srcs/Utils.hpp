@@ -1,5 +1,5 @@
 #ifndef UTILS_HPP
-# define UTILS_HPP
+#define UTILS_HPP
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -15,7 +15,9 @@
 
 #include <sys/time.h>
 #include <sys/stat.h>
-
+#include <sys/wait.h>
+#include <sys/select.h>
+#include <arpa/inet.h>
 
 #include <dirent.h>
 
@@ -42,6 +44,12 @@
 # define WHITE			"\x1b[37m"
 # define END			"\x1b[0m"
 # define UNDER			"\x1b[4m"
+
+#define TMP_PATH 	"/tmp/cgi.tmp"
+
+#define TIMEOUT 10
+#define RETRY	"25"
+#define maxFD 1023
 
 typedef std::map<std::string, std::string> element;
 typedef std::map<std::string, element> Config;
@@ -117,8 +125,6 @@ namespace ft
 
 namespace utils
 {
-	void exitWithLog();
-
 	void showMessage(std::string text);
 }
 

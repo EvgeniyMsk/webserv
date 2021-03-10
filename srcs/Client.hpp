@@ -1,18 +1,7 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
-#include <sys/wait.h>
-#include <cstring>
-#include <iostream>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/select.h>
-#include <arpa/inet.h>
-#include <string>
-#include <map>
 #include "Utils.hpp"
-
-#define TMP_PATH 	"/tmp/cgi.tmp"
 
 class Client
 {

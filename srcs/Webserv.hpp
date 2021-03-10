@@ -3,12 +3,9 @@
 
 #include "Server.hpp"
 #include "Utils.hpp"
-#define maxFD 1023
 
 class Webserv
 {
-	typedef std::map<std::string, std::string> elmt;
-	typedef std::map<std::string, elmt> config;
 private:
 	fd_set w_read_set;
 	fd_set w_write_set;
@@ -17,7 +14,7 @@ private:
 
 	static std::string readFile(char *file);
 
-	void getContent(std::string &buffer, std::string &context, std::string prec, size_t &nb_line, config &config);
+	void getContent(std::string &buffer, std::string &context, std::string prec, size_t &nb_line, Config &config);
 
 public:
 	Webserv();

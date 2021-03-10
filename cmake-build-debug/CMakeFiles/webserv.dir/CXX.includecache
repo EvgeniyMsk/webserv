@@ -7,24 +7,6 @@
 #IncludeRegexTransform: 
 
 /Users/qsymond/Desktop/webserv/srcs/Client.hpp
-sys/wait.h
--
-cstring
--
-iostream
--
-fcntl.h
--
-unistd.h
--
-sys/select.h
--
-arpa/inet.h
--
-string
--
-map
--
 Utils.hpp
 /Users/qsymond/Desktop/webserv/srcs/Utils.hpp
 
@@ -59,6 +41,12 @@ sys/time.h
 -
 sys/stat.h
 -
+sys/wait.h
+-
+sys/select.h
+-
+arpa/inet.h
+-
 dirent.h
 -
 
@@ -71,8 +59,4 @@ Server.hpp
 /Users/qsymond/Desktop/webserv/srcs/Server.hpp
 Utils.hpp
 /Users/qsymond/Desktop/webserv/srcs/Utils.hpp
-
-/Users/qsymond/Desktop/webserv/srcs/main.cpp
-Webserv.hpp
-/Users/qsymond/Desktop/webserv/srcs/Webserv.hpp
 

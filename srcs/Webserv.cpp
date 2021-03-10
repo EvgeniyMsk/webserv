@@ -34,7 +34,7 @@ void Webserv::init()
 	for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
 	{
 		std::cout << RED UNDER << "Конфиг для " << i + 1 << "-го cервера:" << END << std::endl;
-		for (std::vector<config>::iterator it1 = it->config.begin(); it1 != it->config.end(); it1++)
+		for (std::vector<Config>::iterator it1 = it->config.begin(); it1 != it->config.end(); it1++)
 		{
 			for (std::map<std::string, std::map<std::string, std::string> >::iterator it2 = it1->begin(); it2 != it1->end(); it2++)
 			{
@@ -124,7 +124,7 @@ void Webserv::parse(char *file, std::vector<Server> &servs)
 	std::string buffer;
 	std::string line;
 	Server server;
-	config tmp;
+	Config tmp;
 
 	buffer = readFile(file);
 	nb_line = 0;
@@ -205,7 +205,7 @@ int Webserv::getOpenFd(std::vector<Server> &servs)
 	return (nb);
 }
 
-void Webserv::getContent(std::string &buffer, std::string &context, std::string prec, size_t &nb_line, config &config)
+void Webserv::getContent(std::string &buffer, std::string &context, std::string prec, size_t &nb_line, Config &config)
 {
 	std::string line;
 	std::string key;
