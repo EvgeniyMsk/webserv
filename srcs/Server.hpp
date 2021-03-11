@@ -12,17 +12,15 @@ private:
 	int maxFd;
 	int port;
 	struct sockaddr_in addr;
-	fd_set *_readSet;
-	fd_set *_writeSet;
-	fd_set *_rSet;
-	fd_set *_wSet;
+	fd_set *read_set;
+	fd_set *write_set;
 	HTTP http;
-
 
 public:
 	std::vector<Client *> clients;
 	std::queue<int> tmpClients;
 	std::vector<Config> config;
+
 	Server();
 
 	virtual ~Server();
@@ -33,7 +31,7 @@ public:
 
 	int getOpenFd();
 
-	void init(fd_set *readSet, fd_set *writeSet, fd_set *rSet, fd_set *wSet);
+	void init(fd_set *rSet, fd_set *wSet);
 
 	void refuseConnection();
 
@@ -43,27 +41,9 @@ public:
 
 	int writeResponse(std::vector<Client *>::iterator it);
 
-	void send503(int fd);
+	void sendRefuseConnection(int fd);
 
-	class ServerException : public std::exception
-	{
-	private:
-		std::string function;
-		std::string error;
-
-	public:
-		ServerException();
-
-		ServerException(std::string function, std::string error);
-
-		virtual    ~ServerException() throw();
-
-		virtual const char *what() const throw();
-	};
-
-private:
-	static int getTimeDiff(std::string start);
-
+	static int getTimeDiff(const std::string &start);
 };
 
 #endif

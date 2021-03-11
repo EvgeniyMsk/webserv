@@ -15,7 +15,7 @@ Client::Client(int clientSocket, fd_set *new_read_set, fd_set *new_write_set, st
 	chunk.isDone = false;
 	chunk.isFound = false;
 	lastDate = ft::getDate();
-	utils::showMessage("new connection from " + ip + ":" + std::to_string(port));
+	utils::showMessage("new connection from " + ip + ":" + std::to_string(port), GREEN);
 }
 
 Client::~Client()
@@ -43,7 +43,7 @@ Client::~Client()
 		close(tmp_fd);
 		unlink(TMP_PATH);
 	}
-	utils::showMessage("connection closed from " + ip + ":" + std::to_string(port));
+	utils::showMessage("connection closed from " + ip + ":" + std::to_string(port), RED);
 }
 
 void Client::setReadState(bool state)
@@ -129,9 +129,9 @@ void Client::writeFile()
 	int result;
 	result = write(write_fd, request.body.c_str(), request.body.size());
 	if (cgi_pid != -1)
-		utils::showMessage("sent " + std::to_string(result) + " bytes to CGI stdin");
+		utils::showMessage("sent " + std::to_string(result) + " bytes to CGI stdin", GREEN);
 	else
-		utils::showMessage("write " + std::to_string(result) + " bytes in file");
+		utils::showMessage("write " + std::to_string(result) + " bytes in file", GREEN);
 	if ((unsigned long) result < request.body.size())
 		request.body = request.body.substr(result);
 	else
@@ -145,7 +145,7 @@ void Client::writeFile()
 
 void Client::setToStandBy()
 {
-	utils::showMessage(request.method + " from " + ip + ":" + std::to_string(port) + " answered");
+	utils::showMessage(request.method + " from " + ip + ":" + std::to_string(port) + " answered", YELLOW);
 	status = STANDBY;
 	setReadState(true);
 	if (read_fd != -1)

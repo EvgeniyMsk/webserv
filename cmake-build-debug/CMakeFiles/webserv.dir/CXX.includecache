@@ -6,17 +6,35 @@
 
 #IncludeRegexTransform: 
 
+/Users/qsymond/Desktop/webserv/srcs/Client.cpp
+Client.hpp
+/Users/qsymond/Desktop/webserv/srcs/Client.hpp
+
 /Users/qsymond/Desktop/webserv/srcs/Client.hpp
 Utils.hpp
 /Users/qsymond/Desktop/webserv/srcs/Utils.hpp
+
+/Users/qsymond/Desktop/webserv/srcs/HTTP.cpp
+HTTP.hpp
+/Users/qsymond/Desktop/webserv/srcs/HTTP.hpp
 
 /Users/qsymond/Desktop/webserv/srcs/HTTP.hpp
 Client.hpp
 /Users/qsymond/Desktop/webserv/srcs/Client.hpp
 
+/Users/qsymond/Desktop/webserv/srcs/Server.cpp
+Server.hpp
+/Users/qsymond/Desktop/webserv/srcs/Server.hpp
+
 /Users/qsymond/Desktop/webserv/srcs/Server.hpp
 HTTP.hpp
 /Users/qsymond/Desktop/webserv/srcs/HTTP.hpp
+
+/Users/qsymond/Desktop/webserv/srcs/Utils.cpp
+string
+-
+Utils.hpp
+/Users/qsymond/Desktop/webserv/srcs/Utils.hpp
 
 /Users/qsymond/Desktop/webserv/srcs/Utils.hpp
 fcntl.h
@@ -47,6 +65,8 @@ sys/select.h
 -
 arpa/inet.h
 -
+fstream
+/Users/qsymond/Desktop/webserv/srcs/fstream
 dirent.h
 -
 
@@ -57,6 +77,8 @@ Webserv.hpp
 /Users/qsymond/Desktop/webserv/srcs/Webserv.hpp
 Server.hpp
 /Users/qsymond/Desktop/webserv/srcs/Server.hpp
-Utils.hpp
-/Users/qsymond/Desktop/webserv/srcs/Utils.hpp
+
+/Users/qsymond/Desktop/webserv/srcs/main.cpp
+Webserv.hpp
+/Users/qsymond/Desktop/webserv/srcs/Webserv.hpp
 

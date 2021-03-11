@@ -2,7 +2,7 @@
 
 extern bool isServerRunning;
 
-Webserv::Webserv() : w_read_set(), w_write_set(), m_read_set(), m_write_set()
+Webserv::Webserv() : w_read_set(), w_write_set(), m_read_set(), m_write_set(), configPath()
 {
 
 }
@@ -28,7 +28,7 @@ void Webserv::init()
 	FD_ZERO(&w_read_set);
 	FD_ZERO(&w_write_set);
 	for (std::vector<Server>::iterator it(servers.begin()); it != servers.end(); ++it)
-		it->init(&w_read_set, &w_write_set, &m_read_set, &m_write_set);
+		it->init(&m_read_set, &m_write_set);
 
 	int i = 0;
 	for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
@@ -46,18 +46,21 @@ void Webserv::init()
 			i++;
 		}
 	}
-
 }
 
 void Webserv::run()
 {
 	isServerRunning = true;
 	std::cout << GREEN "Вебсервер успешно запущен!" << END << std::endl;
+	FD_SET(0, &m_read_set);
+	std::cout << "Введите \"help\" для отображения списка команд!" << std::endl;
 	while (isServerRunning)
 	{
 		w_read_set = m_read_set;
 		w_write_set = m_write_set;
 		select(getMaxFd(servers) + 1, &w_read_set, &w_write_set, nullptr, nullptr);
+		if (FD_ISSET(0, &w_read_set))
+			this->handleCLI();
 		for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it)
 		{
 			if (FD_ISSET(it->getFd(), &w_read_set))
@@ -78,7 +81,7 @@ void Webserv::run()
 			}
 			if (!it->tmpClients.empty())
 				if (FD_ISSET(it->tmpClients.front(), &w_write_set))
-					it->send503(it->tmpClients.front());
+					it->sendRefuseConnection(it->tmpClients.front());
 			for (std::vector<Client *>::iterator client = it->clients.begin(); client != it->clients.end(); ++client)
 			{
 				if (FD_ISSET((*client)->fd, &w_read_set))
@@ -97,6 +100,39 @@ void Webserv::run()
 		}
 	}
 	servers.clear();
+}
+
+void Webserv::stopServer() {
+	FD_ZERO(&m_read_set);
+	FD_ZERO(&m_write_set);
+	FD_ZERO(&w_read_set);
+	FD_ZERO(&w_write_set);
+	std::cout << GREEN "Server stopped gracefully.\n" << END;
+}
+
+void Webserv::handleCLI() {
+	std::string input;
+	std::getline(std::cin, input);
+	if (input == "exit") {
+		std::cout << "Выключаю сервер..." << std::endl;
+		stopServer();
+		exit(0);
+	}
+	else if (input == "restart") {
+		std::cout << "Перезагружаю сервер..." << std::endl;
+		stopServer();
+		run();
+	}
+	else if (input == "help") {
+		std::cout << "Список доступных команд:\n"
+					 "\n"
+					 "   help              помощь\n"
+					 "   exit              завершить работу сервера\n"
+					 "   restart           перезагрузить сервер\n" << std::endl;
+	}
+	else {
+		std::cout << "Команда \"" << input << "\" не найдена. Введите \"help\" для отображения списка команд!" << std::endl;
+	}
 }
 
 std::string Webserv::readFile(char *file)
@@ -129,7 +165,7 @@ void Webserv::parse(char *file, std::vector<Server> &servs)
 	buffer = readFile(file);
 	nb_line = 0;
 	if (buffer.empty())
-		throw (Webserv::InvalidConfigFileException(nb_line));
+		throw (WebservException(nb_line));
 	while (!buffer.empty())
 	{
 		ft::get_next_line(buffer, line);
@@ -142,14 +178,14 @@ void Webserv::parse(char *file, std::vector<Server> &servs)
 			while (ft::isSpace(line[6]))
 				line.erase(6, 1);
 			if (line[6] != '{')
-				throw (Webserv::InvalidConfigFileException(nb_line));
+				throw (WebservException(nb_line));
 			if (!line.compare(0, 7, "server{"))
 			{
 				d = 7;
 				while (ft::isSpace(line[d]))
 					line.erase(7, 1);
 				if (line[d])
-					throw (Webserv::InvalidConfigFileException(nb_line));
+					throw (WebservException(nb_line));
 				getContent(buffer, context, line, nb_line, tmp); //may throw exception
 				std::vector<Server>::iterator it(servs.begin());
 				while (it != servs.end())
@@ -157,7 +193,7 @@ void Webserv::parse(char *file, std::vector<Server> &servs)
 					if (tmp["server|"]["listen"] == it->config.back()["server|"]["listen"])
 					{
 						if (tmp["server|"]["server_name"] == it->config.back()["server|"]["server_name"])
-							throw (Webserv::InvalidConfigFileException(nb_line));
+							throw (WebservException(nb_line));
 						else
 							it->config.push_back(tmp);
 						break;
@@ -173,9 +209,9 @@ void Webserv::parse(char *file, std::vector<Server> &servs)
 				tmp.clear();
 				context.clear();
 			} else
-				throw (Webserv::InvalidConfigFileException(nb_line));
+				throw (WebservException(nb_line));
 		} else if (line[0])
-			throw (Webserv::InvalidConfigFileException(nb_line));
+			throw (WebservException(nb_line));
 	}
 }
 
@@ -239,13 +275,13 @@ void Webserv::getContent(std::string &buffer, std::string &context, std::string 
 			}
 			tmp = 0;
 			if (line[pos] != ';' && line[pos] != '{')
-				throw (Webserv::InvalidConfigFileException(nb_line));
+				throw (WebservException(nb_line));
 			else
 				tmp++;
 			while (ft::isSpace(line[pos + tmp]))
 				tmp++;
 			if (line[pos + tmp])
-				throw (Webserv::InvalidConfigFileException(nb_line));
+				throw (WebservException(nb_line));
 			else if (line[pos] == '{')
 				getContent(buffer, context, line, nb_line, config);
 			else
@@ -262,31 +298,22 @@ void Webserv::getContent(std::string &buffer, std::string &context, std::string 
 			while (ft::isSpace(line[++pos]))
 				line.erase(line.begin());
 			if (line[pos])
-				throw (Webserv::InvalidConfigFileException(nb_line));
+				throw (WebservException(nb_line));
 			context.pop_back();
 			context = context.substr(0, context.find_last_of('|') + 1);
 		}
 	}
 	if (line[0] != '}')
-		throw (Webserv::InvalidConfigFileException(nb_line));
+		throw (WebservException(nb_line));
 }
 
-Webserv::InvalidConfigFileException::InvalidConfigFileException()
-{ this->line = 0; }
 
-Webserv::InvalidConfigFileException::InvalidConfigFileException(size_t d)
+char *Webserv::getConfigPath() const
 {
-	this->line = d;
-	this->error = "line " + std::to_string(this->line) + ": Invalid Webserv File";
+	return configPath;
 }
 
-Webserv::InvalidConfigFileException::~InvalidConfigFileException() throw()
-{}
-
-
-const char *Webserv::InvalidConfigFileException::what() const throw()
+void Webserv::setConfigPath(char *configPath)
 {
-	if (this->line)
-		return (error.c_str());
-	return ("Invalid Webserv File");
+	this->configPath = (char *) configPath;
 }

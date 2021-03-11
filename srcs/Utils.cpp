@@ -110,12 +110,12 @@ namespace utils
 		return (result);
 	}
 
-	void showMessage(std::string text)
+	void showMessage(std::string text, const std::string& color)
 	{
 		std::string log;
 
 		log += getTime();
 		log += " " + text;
-		std::cout << log << std::endl;
+		std::cout << color << log << END << std::endl;
 	}
 }

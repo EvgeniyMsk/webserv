@@ -9,16 +9,6 @@ class Client
 
 	friend class HTTP;
 
-public:
-
-	int fd;
-	int read_fd;
-	int write_fd;
-
-	void readFile();
-
-	void writeFile();
-	std::map<std::string, std::string> clientConfig;
 private:
 	int port;
 	int status;
@@ -32,10 +22,19 @@ private:
 	std::string ip;
 	std::string lastDate;
 	std::string textResponse;
-
 	w_chunk chunk;
 
 public:
+	int fd;
+	int read_fd;
+	int write_fd;
+
+	void readFile();
+
+	void writeFile();
+
+	std::map<std::string, std::string> clientConfig;
+
 	Client(int clientSocket, fd_set *new_read_set, fd_set *new_write_set, struct sockaddr_in info);
 
 	virtual ~Client();

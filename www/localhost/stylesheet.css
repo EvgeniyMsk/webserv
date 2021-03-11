@@ -42,6 +42,7 @@ body {
     font-weight: 300;
     letter-spacing: 0.025em;
     padding-left: 1em;
+    color: rgb(201, 209, 212);
 }
 
 .error {
@@ -49,7 +50,7 @@ body {
 }
 
 .success {
-    background: linear-gradient(130deg, rgb(8, 44, 65) 0%, rgb(157, 227, 160) 100%);
+    background: linear-gradient(130deg, rgb(201, 209, 212) 0%, rgb(35, 78, 0) 100%);
 }
 
 p {
@@ -78,7 +79,7 @@ a {
     position: relative;
     text-decoration: none;
     background-color: #cfb053;
-    transition: 0.4s;
+    transition: 0.8s;
 }
 
 a:hover {
@@ -90,6 +91,7 @@ ul {
     list-style-type: none;
     margin: 0;
     padding: 0;
+    visibility: hidden;
 }
 
 li {

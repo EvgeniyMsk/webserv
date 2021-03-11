@@ -4,12 +4,14 @@ bool isServerRunning = true;
 
 int main(int ac, char **av)
 {
+
 	Webserv webserv;
 	if (ac != 2)
 		std::cout << "Запуск сервера: ./webserv путь_к_конфигу\n";
 	try
 	{
-		webserv.parse(av[1], webserv.servers);
+		webserv.setConfigPath(av[1]);
+		webserv.parse(webserv.getConfigPath(), webserv.servers);
 		webserv.init();
 		webserv.run();
 	}

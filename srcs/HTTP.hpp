@@ -7,8 +7,10 @@ class Client;
 
 class HTTP
 {
+	public:
+
 	std::map<std::string, std::string> MIMETypes;
-public:
+
 	HTTP();
 
 	virtual ~HTTP();
@@ -21,7 +23,6 @@ public:
 
 	static void createResponse(Client &client);
 
-private:
 	void handleGet(Client &client);
 
 	void handleHead(Client &client);
@@ -40,11 +41,11 @@ private:
 
 	void handleBadRequest(Client &client);
 
-	static void getConf(Client &client, Request &req, std::vector<Config> &conf);
+	static void getConf(Client &client, Request &request, std::vector<Config> &config);
 
 	void negotiate(Client &client);
 
-	static void createListing(Client &client);
+	static void doAutoindex(Client &client);
 
 	static bool checkSyntax(const Request &request);
 
@@ -58,13 +59,13 @@ private:
 
 	static void parseCGIResult(Client &client);
 
-	static std::string getLastModified(const std::string& path);
+	static std::string getLastModified(const std::string &path);
 
 	std::string findType(Client &client);
 
 	static void getErrorPage(Client &client);
 
-	int findLen(Client &client);
+	static int findLength(Client &client);
 
 	static void fillBody(Client &client);
 

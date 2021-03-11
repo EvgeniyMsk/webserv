@@ -96,7 +96,7 @@ void HTTP::parseBody(Client &client)
 	}
 	if (client.status == CODE)
 		utils::showMessage(
-				"body size parsed from " + client.ip + ":" + std::to_string(client.port) + ": " + std::to_string(client.request.body.size()));
+				"body size parsed from " + client.ip + ":" + std::to_string(client.port) + ": " + std::to_string(client.request.body.size()), BLUE);
 }
 
 void HTTP::getBody(Client &client)
@@ -130,7 +130,7 @@ void HTTP::dechunkBody(Client &client)
 {
 	if (strstr(client.buffer, "\r\n") && !client.chunk.isFound)
 	{
-		client.chunk.length = findLen(client);
+		client.chunk.length = findLength(client);
 		if (client.chunk.length == 0)
 			client.chunk.isDone = true;
 		else
@@ -147,64 +147,64 @@ void HTTP::dechunkBody(Client &client)
 	}
 }
 
-void HTTP::getConf(Client &client, Request &req, std::vector<Config> &conf)
+void HTTP::getConf(Client &client, Request &request, std::vector<Config> &config)
 {
-	std::map<std::string, std::string> elmt;
-	std::string tmp;
+	std::map<std::string, std::string> elem;
+	std::string temp;
 	std::string file;
-	struct stat info;
-	Config to_parse;
+	struct stat info = {};
+	Config current;
 
-	if (!req.isValid)
+	if (!request.isValid)
 	{
-		client.clientConfig["error"] = conf[0]["server|"]["error"];
+		client.clientConfig["error"] = config[0]["server|"]["error"];
 		return;
 	}
-	std::vector<Config>::iterator it(conf.begin());
-	while (it != conf.end())
+	std::vector<Config>::iterator it(config.begin());
+	while (it != config.end())
 	{
-		if (req.headers["Host"] == (*it)["server|"]["server_name"])
+		if (request.headers["Host"] == (*it)["server|"]["server_name"])
 		{
-			to_parse = *it;
+			current = *it;
 			break;
 		}
 		++it;
 	}
-	if (it == conf.end())
-		to_parse = conf[0];
-	file = req.uri.substr(req.uri.find_last_of('/') + 1, req.uri.find('?'));
-	tmp = req.uri;
+	if (it == config.end())
+		current = config[0];
+	file = request.uri.substr(request.uri.find_last_of('/') + 1, request.uri.find('?'));
+	temp = request.uri;
 	do
 	{
-		if (to_parse.find("server|location " + tmp + "|") != to_parse.end())
+		if (current.find("server|location " + temp + "|") != current.end())
 		{
-			elmt = to_parse["server|location " + tmp + "|"];
+			elem = current["server|location " + temp + "|"];
 			break;
 		}
-		tmp = tmp.substr(0, tmp.find_last_of('/'));
-	} while (tmp != "");
-	if (elmt.empty())
-		if (to_parse.find("server|location /|") != to_parse.end())
-			elmt = to_parse["server|location /|"];
-	if (!elmt.empty())
+		temp = temp.substr(0, temp.find_last_of('/'));
+	} while (temp != "");
+	if (elem.empty())
+		if (current.find("server|location /|") != current.end())
+			elem = current["server|location /|"];
+	if (!elem.empty())
 	{
-		client.clientConfig = elmt;
-		client.clientConfig["path"] = req.uri.substr(0, req.uri.find('?'));
-		if (elmt.find("root") != elmt.end())
-			client.clientConfig["path"].replace(0, tmp.size(), elmt["root"]);
+		client.clientConfig = elem;
+		client.clientConfig["path"] = request.uri.substr(0, request.uri.find('?'));
+		if (elem.find("root") != elem.end())
+			client.clientConfig["path"].replace(0, temp.size(), elem["root"]);
 	}
-	for (std::map<std::string, std::string>::iterator it = to_parse["server|"].begin(); it != to_parse["server|"].end(); ++it)
+	for (std::map<std::string, std::string>::iterator it = current["server|"].begin(); it != current["server|"].end(); ++it)
 	{
 		if (client.clientConfig.find(it->first) == client.clientConfig.end())
 			client.clientConfig[it->first] = it->second;
 	}
 	lstat(client.clientConfig["path"].c_str(), &info);
 	if (S_ISDIR(info.st_mode))
-		if (client.clientConfig["index"][0] && client.clientConfig["listing"] != "on")
-			client.clientConfig["path"] += "/" + elmt["index"];
-	if (req.method == "GET")
+		if (client.clientConfig["index"][0] && client.clientConfig["autoindex"] != "on")
+			client.clientConfig["path"] += "/" + elem["index"];
+	if (request.method == "GET")
 		client.clientConfig["savedpath"] = client.clientConfig["path"];
-	utils::showMessage("path requested from " + client.ip + ":" + std::to_string(client.port) + ": " + client.clientConfig["path"]);
+	utils::showMessage("path requested from " + client.ip + ":" + std::to_string(client.port) + ": " + client.clientConfig["path"], WHITE);
 }
 
 void HTTP::negotiate(Client &client)
@@ -281,26 +281,26 @@ void HTTP::negotiate(Client &client)
 	}
 }
 
-void HTTP::createListing(Client &client)
+void HTTP::doAutoindex(Client &client)
 {
 	DIR *dir;
-	struct dirent *cur;
+	struct dirent *current;
 
 	close(client.read_fd);
 	client.read_fd = -1;
 	dir = opendir(client.clientConfig["path"].c_str());
 	client.response.body = "<html>\n<body>\n";
 	client.response.body += "<h1>Autoindex: on</h1>\n";
-	while ((cur = readdir(dir)) != nullptr)
+	while ((current = readdir(dir)) != nullptr)
 	{
-		if (cur->d_name[0] != '.')
+		if (current->d_name[0] != '.')
 		{
 			client.response.body += "<a href=\"" + client.request.uri;
 			if (client.request.uri != "/")
 				client.response.body += "/";
-			client.response.body += cur->d_name;
+			client.response.body += current->d_name;
 			client.response.body += "\">";
-			client.response.body += cur->d_name;
+			client.response.body += current->d_name;
 			client.response.body += "</a><br>\n";
 		}
 	}
@@ -308,21 +308,21 @@ void HTTP::createListing(Client &client)
 	client.response.body += "</body>\n</html>\n";
 }
 
-bool HTTP::checkSyntax(const Request &req)
+bool HTTP::checkSyntax(const Request &request)
 {
-	if (req.method.size() == 0 || req.uri.size() == 0
-		|| req.version.size() == 0)
+	if (request.method.size() == 0 || request.uri.size() == 0
+		|| request.version.size() == 0)
 		return (false);
-	if (req.method != "GET" && req.method != "POST"
-		&& req.method != "HEAD" && req.method != "PUT"
-		&& req.method != "CONNECT" && req.method != "TRACE"
-		&& req.method != "OPTIONS" && req.method != "DELETE")
+	if (request.method != "GET" && request.method != "POST"
+		&& request.method != "HEAD" && request.method != "PUT"
+		&& request.method != "CONNECT" && request.method != "TRACE"
+		&& request.method != "OPTIONS" && request.method != "DELETE")
 		return (false);
-	if (req.method != "OPTIONS" && req.uri[0] != '/') //OPTIONS can have * as uri
+	if (request.method != "OPTIONS" && request.uri[0] != '/') //OPTIONS can have * as uri
 		return (false);
-	if (req.version != "HTTP/1.1\r" && req.version != "HTTP/1.1")
+	if (request.version != "HTTP/1.1\r" && request.version != "HTTP/1.1")
 		return (false);
-	if (req.headers.find("Host") == req.headers.end())
+	if (request.headers.find("Host") == request.headers.end())
 		return (false);
 	return (true);
 }
@@ -350,7 +350,7 @@ void HTTP::execCGI(Client &client)
 	env = setEnv(client);
 	client.tmp_fd = open(TMP_PATH, O_WRONLY | O_CREAT, 0666);
 	pipe(tubes);
-	utils::showMessage("executing CGI for " + client.ip + ":" + std::to_string(client.port));
+	utils::showMessage("executing CGI for " + client.ip + ":" + std::to_string(client.port), BLUE);
 	if ((client.cgi_pid = fork()) == 0)
 	{
 		close(tubes[1]);
@@ -429,7 +429,7 @@ void HTTP::createResponse(Client &client)
 	b = client.response.headers.begin();
 	while (b != client.response.headers.end())
 	{
-		if (b->second != "")
+		if (!b->second.empty())
 			client.textResponse += b->first + ": " + b->second + "\r\n";
 		++b;
 	}
@@ -458,7 +458,7 @@ void HTTP::dispatcher(Client &client)
 
 void HTTP::handleGet(Client &client)
 {
-	struct stat file_info;
+	struct stat file_info = {};
 	std::string credential;
 
 	switch (client.status)
@@ -466,8 +466,8 @@ void HTTP::handleGet(Client &client)
 		case CODE:
 			getStatusCode(client);
 			fstat(client.read_fd, &file_info);
-			if (S_ISDIR(file_info.st_mode) && client.clientConfig["listing"] == "on")
-				createListing(client);
+			if (S_ISDIR(file_info.st_mode) && client.clientConfig["autoindex"] == "on")
+				doAutoindex(client);
 			if (client.response.statusCode == NOTFOUND)
 				negotiate(client);
 			if (((client.clientConfig.find("CGI") != client.clientConfig.end() &&
@@ -522,8 +522,8 @@ void HTTP::handleHead(Client &client)
 		case CODE:
 			getStatusCode(client);
 			fstat(client.read_fd, &file_info);
-			if (S_ISDIR(file_info.st_mode) && client.clientConfig["listing"] == "on")
-				createListing(client);
+			if (S_ISDIR(file_info.st_mode) && client.clientConfig["autoindex"] == "on")
+				doAutoindex(client);
 			else if (client.response.statusCode == NOTFOUND)
 				negotiate(client);
 			fstat(client.read_fd, &file_info);
@@ -773,16 +773,6 @@ void HTTP::handleBadRequest(Client &client)
 	}
 }
 
-
-static const int B64index[256] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-								  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-								  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 62, 63, 62, 62, 63, 52, 53, 54, 55,
-								  56, 57, 58, 59, 60, 61, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6,
-								  7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 0,
-								  0, 0, 0, 63, 0, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
-								  41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51};
-
-
 std::string HTTP::findType(Client &client)
 {
 	std::string extension;
@@ -809,7 +799,7 @@ void HTTP::getErrorPage(Client &client)
 	client.read_fd = open(path.c_str(), O_RDONLY);
 }
 
-std::string HTTP::getLastModified(const std::string& path)
+std::string HTTP::getLastModified(const std::string &path)
 {
 	char buf[BUFFER_SIZE + 1];
 	int ret;
@@ -824,7 +814,7 @@ std::string HTTP::getLastModified(const std::string& path)
 	return (buf);
 }
 
-int HTTP::findLen(Client &client)
+int HTTP::findLength(Client &client)
 {
 	std::string to_convert;
 	int len;
@@ -900,7 +890,7 @@ int HTTP::fromHexa(const char *nb)
 				j++;
 			}
 		}
-		result += index * ft::pow(16, (int)(strlen(nb) - 1) - i);
+		result += index * ft::pow(16, (int) (strlen(nb) - 1) - i);
 		i++;
 	}
 	return (result);
@@ -1148,7 +1138,7 @@ int HTTP::GETStatus(Client &client)
 		{
 			fstat(client.read_fd, &info);
 			if (!S_ISDIR(info.st_mode)
-				|| (S_ISDIR(info.st_mode) && client.clientConfig["listing"] == "on"))
+				|| (S_ISDIR(info.st_mode) && client.clientConfig["autoindex"] == "on"))
 				return (1);
 			else
 				client.response.statusCode = NOTFOUND;
@@ -1277,7 +1267,7 @@ int HTTP::OPTIONSStatus(Client &client)
 int HTTP::DELETEStatus(Client &client)
 {
 	int fd;
-	struct stat info;
+	struct stat info = {};
 	int save_err;
 
 	if (client.response.statusCode == OK)
