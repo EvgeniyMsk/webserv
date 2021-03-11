@@ -31,7 +31,7 @@ public:
 
 	int getOpenFd();
 
-	void init(fd_set *rSet, fd_set *wSet);
+	void init(fd_set *readSet, fd_set *writeSet);
 
 	void refuseConnection();
 

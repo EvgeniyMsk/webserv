@@ -15,7 +15,7 @@ public:
 
 	char *getConfigPath() const;
 
-	void setConfigPath(char *configPath);
+	void setConfigPath(char *newConfigPath);
 
 	static std::string readFile(char *file);
 

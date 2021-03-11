@@ -16,7 +16,7 @@ void Webserv::exit(int sig)
 {
 	(void) sig;
 
-	std::cout << "\n" << "exiting...\n";
+	std::cout << "\n" << "завершаю работу...\n";
 	isServerRunning = false;
 }
 
@@ -107,7 +107,7 @@ void Webserv::stopServer() {
 	FD_ZERO(&m_write_set);
 	FD_ZERO(&w_read_set);
 	FD_ZERO(&w_write_set);
-	std::cout << GREEN "Server stopped gracefully.\n" << END;
+	std::cout << GREEN "Сервер успешко остановлен!\n" << END;
 }
 
 void Webserv::handleCLI() {
@@ -120,7 +120,6 @@ void Webserv::handleCLI() {
 	}
 	else if (input == "restart") {
 		std::cout << "Перезагружаю сервер..." << std::endl;
-		stopServer();
 		run();
 	}
 	else if (input == "help") {
@@ -187,7 +186,7 @@ void Webserv::parse(char *file, std::vector<Server> &servs)
 				if (line[d])
 					throw (WebservException(nb_line));
 				getContent(buffer, context, line, nb_line, tmp); //may throw exception
-				std::vector<Server>::iterator it(servs.begin());
+				std::vector<Server>::iterator it = servs.begin();
 				while (it != servs.end())
 				{
 					if (tmp["server|"]["listen"] == it->config.back()["server|"]["listen"])
@@ -313,7 +312,7 @@ char *Webserv::getConfigPath() const
 	return configPath;
 }
 
-void Webserv::setConfigPath(char *configPath)
+void Webserv::setConfigPath(char *newConfigPath)
 {
-	this->configPath = (char *) configPath;
+	this->configPath = (char *) newConfigPath;
 }

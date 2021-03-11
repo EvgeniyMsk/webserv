@@ -68,14 +68,14 @@ int Server::getOpenFd()
 	return (nb);
 }
 
-void Server::init(fd_set *rSet, fd_set *wSet)
+void Server::init(fd_set *readSet, fd_set *writeSet)
 {
 	int yes = 1;
 	std::string to_parse;
 	std::string host;
 
-	write_set = wSet;
-	read_set = rSet;
+	write_set = writeSet;
+	read_set = readSet;
 
 	to_parse = config[0]["server|"]["listen"];
 	errno = 0;
@@ -83,7 +83,7 @@ void Server::init(fd_set *rSet, fd_set *wSet)
 		throw (WebservException("socket()", std::string(strerror(errno))));
 	if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
 		throw (WebservException("setsockopt()", std::string(strerror(errno))));
-	if (to_parse.find(":") != std::string::npos)
+	if (to_parse.find(':') != std::string::npos)
 	{
 		host = to_parse.substr(0, to_parse.find(":"));
 		if ((port = atoi(to_parse.substr(to_parse.find(":") + 1).c_str())) < 0)
