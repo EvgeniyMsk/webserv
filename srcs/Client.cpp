@@ -2,15 +2,15 @@
 
 
 Client::Client(int clientSocket, fd_set *new_read_set, fd_set *new_write_set, struct sockaddr_in info)
-		: fd(clientSocket), read_fd(-1), write_fd(-1), status(STANDBY), cgi_pid(-1), tmp_fd(-1), read_set(new_read_set), write_set(new_write_set), chunk()
+		:  status(STANDBY),  cgi_pid(-1),  tmp_fd(-1),  read_set(new_read_set),  write_set(new_write_set), chunk(), clientSock(clientSocket), read_fd(-1), write_fd(-1)
 {
 	ip = inet_ntoa(info.sin_addr);
 	port = htons(info.sin_port);
 	buffer = (char *) malloc(sizeof(char) * (BUFFER_SIZE + 1));
 	memset((void *) buffer, 0, BUFFER_SIZE + 1);
-	fcntl(fd, F_SETFL, O_NONBLOCK);
-	FD_SET(fd, read_set);
-	FD_SET(fd, write_set);
+	fcntl(clientSock, F_SETFL, O_NONBLOCK);
+	FD_SET(clientSock, read_set);
+	FD_SET(clientSock, write_set);
 	chunk.length = 0;
 	chunk.isDone = false;
 	chunk.isFound = false;
@@ -22,11 +22,11 @@ Client::~Client()
 {
 	free(buffer);
 	buffer = nullptr;
-	if (fd != -1)
+	if (clientSock != -1)
 	{
-		close(fd);
-		FD_CLR(fd, read_set);
-		FD_CLR(fd, write_set);
+		close(clientSock);
+		FD_CLR(clientSock, read_set);
+		FD_CLR(clientSock, write_set);
 	}
 	if (read_fd != -1)
 	{
@@ -49,17 +49,17 @@ Client::~Client()
 void Client::setReadState(bool state)
 {
 	if (state)
-		FD_SET(fd, read_set);
+		FD_SET(clientSock, read_set);
 	else
-		FD_CLR(fd, read_set);
+		FD_CLR(clientSock, read_set);
 }
 
 void Client::setWriteState(bool state)
 {
 	if (state)
-		FD_SET(fd, write_set);
+		FD_SET(clientSock, write_set);
 	else
-		FD_CLR(fd, write_set);
+		FD_CLR(clientSock, write_set);
 }
 
 void Client::setFileToRead(bool state)

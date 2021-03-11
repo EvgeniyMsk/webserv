@@ -84,10 +84,10 @@ void Webserv::run()
 					it->sendRefuseConnection(it->tmpClients.front());
 			for (std::vector<Client *>::iterator client = it->clients.begin(); client != it->clients.end(); ++client)
 			{
-				if (FD_ISSET((*client)->fd, &w_read_set))
+				if (FD_ISSET((*client)->clientSock, &w_read_set))
 					if (!it->readRequest(client))
 						break;
-				if (FD_ISSET((*client)->fd, &w_write_set))
+				if (FD_ISSET((*client)->clientSock, &w_write_set))
 					if (!it->writeResponse(client))
 						break;
 				if ((*client)->write_fd != -1)

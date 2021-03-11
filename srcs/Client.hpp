@@ -25,7 +25,7 @@ private:
 	w_chunk chunk;
 
 public:
-	int fd;
+	int clientSock;
 	int read_fd;
 	int write_fd;
 

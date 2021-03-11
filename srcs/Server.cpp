@@ -155,7 +155,7 @@ int Server::readRequest(std::vector<Client *>::iterator it)
 
 	client = *it;
 	bytes = strlen(client->buffer);
-	ret = read(client->fd, client->buffer + bytes, BUFFER_SIZE - bytes);
+	ret = read(client->clientSock, client->buffer + bytes, BUFFER_SIZE - bytes);
 	bytes += ret;
 	if (ret > 0)
 	{
@@ -199,7 +199,7 @@ int Server::writeResponse(std::vector<Client *>::iterator it)
 			log = "RESPONSE:\n";
 			log += client->textResponse.substr(0, 128);
 			utils::showMessage(log, BLUE);
-			bytes = write(client->fd, client->textResponse.c_str(), client->textResponse.size());
+			bytes = write(client->clientSock, client->textResponse.c_str(), client->textResponse.size());
 			if (bytes < client->textResponse.size())
 				client->textResponse = client->textResponse.substr(bytes);
 			else
