@@ -32,7 +32,7 @@
 #define UNAVAILABLE		"503 Service Unavailable"
 #define NOTIMPLEMENTED	"501 Not Implemented"
 #define INTERNALERROR	"500 Internal Server Error"
-#define BUFFER_SIZE 500
+#define BUFFER_SIZE 32767
 
 # define GREY			"\x1b[30m"
 # define RED			"\x1b[31m"
