@@ -126,7 +126,7 @@ void Client::readFile()
 
 void Client::writeFile()
 {
-	int result;
+	int result = 0;
 	result = write(write_fd, request.body.c_str(), request.body.size());
 	if (cgi_pid != -1)
 		utils::showMessage("sent " + std::to_string(result) + " bytes to CGI stdin", GREEN);

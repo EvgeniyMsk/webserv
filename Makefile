@@ -5,13 +5,18 @@ NAME = webserv
  SRCS = $(addprefix srcs/, $(addsuffix .cpp, $(FILES)))
  OBJS = $(SRCS:.cpp=.o)
  CXX = clang++
-all : $(NAME)
+ DIR_CONFIGS =	./config/
+ CONFIG	= default.cfg
+ PWD = $(shell pwd)
+all : $(NAME) $(DIR_CONFIGS)$(CONFIG)
+	@cat $(DIR_CONFIGS)/default.cfg | sed 's=PWD=$(PWD)=g' > $(DIR_CONFIGS)localhost.cfg 
+	mkdir Download
 $(NAME) : $(OBJS)
-	$(CXX) $(CFLAGS) $(SRCS) -o $(NAME)
+	$(CXX) $(CFLAGS) $(SRCS) -o $(NAME)	
 clean:
 	rm -f $(OBJS)
 fclean: 
 	rm $(OBJS)
-	rm -rf $(NAME)
+	rm -rf $(NAME) Download
 re: fclean all
 .PHONY: clean fclean re all
