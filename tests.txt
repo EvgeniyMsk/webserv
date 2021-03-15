@@ -1,5 +1,5 @@
 curl --resolve example.com:8080:127.0.0.1 http://example.com:8080
-siege http://localhost:8080 -d0.4 -r20
+siege http://localhost:8080 -b -d0.4 -r25
 
 import requests
 from requests.auth import HTTPBasicAuth

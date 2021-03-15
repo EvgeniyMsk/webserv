@@ -17,6 +17,7 @@ clean:
 	rm -f $(OBJS)
 fclean: 
 	rm $(OBJS)
-	rm -rf $(NAME) Download
+	rm -Rfv Download 
+	rm $(NAME) 
 re: fclean all
 .PHONY: clean fclean re all

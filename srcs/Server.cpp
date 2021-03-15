@@ -200,7 +200,7 @@ int Server::writeResponse(std::vector<Client *>::iterator it)
 			log += client->textResponse.substr(0, 128);
 			utils::showMessage(log, BLUE);
 			bytes = write(client->clientSock, client->textResponse.c_str(), client->textResponse.size());
-			if (bytes < client->textResponse.size())
+			if (bytes < client->textResponse.size() && bytes >= 0)
 				client->textResponse = client->textResponse.substr(bytes);
 			else
 			{
